@@ -27,12 +27,33 @@
                 
                 <div class="flex flex-col sm:flex-row gap-3 mb-3">
                     <div class="flex flex-grow gap-2 min-w-0">
-                        <label for="countryCodeSelect" class="sr-only">Country code</label>
-                        <select id="countryCodeSelect" aria-label="Country code"
-                                class="shrink-0 px-3 py-3.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-brand-plum focus:outline-none transition text-sm bg-stone-50/50 text-stone-900">
-                            <option value="1">+1 US</option>
-                            <option value="44">+44 UK</option>
-                        </select>
+                        <div id="countryCodePicker" class="relative shrink-0">
+                            <label for="countryCodeSelect" class="sr-only">Country code</label>
+                            <select id="countryCodeSelect" class="sr-only" tabindex="-1" aria-hidden="true">
+                                <option value="1" selected>+1</option>
+                                <option value="44">+44</option>
+                                <option value="52">+52</option>
+                            </select>
+                            <button type="button" id="countryCodeButton" aria-haspopup="listbox" aria-expanded="false" aria-label="Country code, United States +1" class="flex items-center gap-2 px-3 py-3.5 rounded-xl border border-stone-300 bg-stone-50/50 text-sm text-stone-900 focus:ring-2 focus:ring-brand-plum focus:outline-none">
+                                <span id="countryCodeFlag" data-flag-code="1" class="inline-flex"></span>
+                                <span id="countryCodeLabel">+1</span>
+                                <svg class="w-3 h-3 text-stone-400" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 L6 8 L9.5 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>
+                            </button>
+                            <div id="countryCodeMenu" role="listbox" class="hidden absolute left-0 z-30 mt-1 min-w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
+                                <button type="button" role="option" data-country="1" data-country-name="United States" aria-label="United States +1" class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50">
+                                    <span data-flag-code="1" class="inline-flex"></span>
+                                    <span>+1</span>
+                                </button>
+                                <button type="button" role="option" data-country="44" data-country-name="United Kingdom" aria-label="United Kingdom +44" class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50">
+                                    <span data-flag-code="44" class="inline-flex"></span>
+                                    <span>+44</span>
+                                </button>
+                                <button type="button" role="option" data-country="52" data-country-name="Mexico" aria-label="Mexico +52" class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50">
+                                    <span data-flag-code="52" class="inline-flex"></span>
+                                    <span>+52</span>
+                                </button>
+                            </div>
+                        </div>
                         <input type="text" id="guestSearchInput" placeholder="Phone or email" 
                                onkeypress="if(event.key==='Enter') performGuestLookup()"
                                class="min-w-0 flex-grow px-4 py-3.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-brand-plum focus:outline-none transition text-sm bg-stone-50/50">

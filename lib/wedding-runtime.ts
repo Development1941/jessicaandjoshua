@@ -822,11 +822,68 @@ export function initWeddingSite() {
     const select = document.getElementById(
       "countryCodeSelect"
     ) as HTMLSelectElement | null;
+    const pickerButton = document.getElementById(
+      "countryCodeButton"
+    ) as HTMLButtonElement | null;
     if (!select) return;
     const value = input?.value.trim() || "";
     const waitingForCode = (input?.placeholder || "").startsWith("6-digit");
     select.disabled = waitingForCode || isEmail(value);
-    select.classList.toggle("opacity-50", select.disabled);
+    if (pickerButton) {
+      pickerButton.disabled = select.disabled;
+      pickerButton.classList.toggle("opacity-50", select.disabled);
+    }
+    if (select.disabled) closeCountryMenu();
+  }
+
+  const COUNTRY_FLAGS: Record<string, string> = {
+    "1": `<svg viewBox="0 0 60 42" width="22" height="15" class="rounded-[2px] shrink-0" aria-hidden="true"><rect width="60" height="42" fill="#B22234"/><g fill="#fff"><rect y="3.23" width="60" height="3.23"/><rect y="9.69" width="60" height="3.23"/><rect y="16.15" width="60" height="3.23"/><rect y="22.62" width="60" height="3.23"/><rect y="29.08" width="60" height="3.23"/><rect y="35.54" width="60" height="3.23"/></g><rect width="26" height="22.6" fill="#3C3B6E"/><g fill="#fff"><circle cx="4" cy="3.4" r="0.9"/><circle cx="9" cy="3.4" r="0.9"/><circle cx="14" cy="3.4" r="0.9"/><circle cx="19" cy="3.4" r="0.9"/><circle cx="6.5" cy="7" r="0.9"/><circle cx="11.5" cy="7" r="0.9"/><circle cx="16.5" cy="7" r="0.9"/><circle cx="4" cy="10.6" r="0.9"/><circle cx="9" cy="10.6" r="0.9"/><circle cx="14" cy="10.6" r="0.9"/><circle cx="19" cy="10.6" r="0.9"/><circle cx="6.5" cy="14.2" r="0.9"/><circle cx="11.5" cy="14.2" r="0.9"/><circle cx="16.5" cy="14.2" r="0.9"/><circle cx="4" cy="17.8" r="0.9"/><circle cx="9" cy="17.8" r="0.9"/><circle cx="14" cy="17.8" r="0.9"/><circle cx="19" cy="17.8" r="0.9"/></g></svg>`,
+    "44": `<svg viewBox="0 0 60 30" width="22" height="15" class="rounded-[2px] shrink-0" aria-hidden="true"><rect width="60" height="30" fill="#012169"/><path d="M0 0 L60 30 M60 0 L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0 L60 30 M60 0 L0 30" stroke="#C8102E" stroke-width="3.5"/><path d="M30 0 V30 M0 15 H60" stroke="#fff" stroke-width="11"/><path d="M30 0 V30 M0 15 H60" stroke="#C8102E" stroke-width="6"/></svg>`,
+    "52": `<svg viewBox="0 0 60 42" width="22" height="15" class="rounded-[2px] shrink-0" aria-hidden="true"><rect width="20" height="42" fill="#006847"/><rect x="20" width="20" height="42" fill="#fff"/><rect x="40" width="20" height="42" fill="#CE1126"/><circle cx="30" cy="21" r="5" fill="#C5A572"/></svg>`,
+  };
+
+  function paintCountryFlags() {
+    document.querySelectorAll<HTMLElement>("[data-flag-code]").forEach((slot) => {
+      const code = slot.getAttribute("data-flag-code") || "";
+      slot.innerHTML = COUNTRY_FLAGS[code] || "";
+    });
+  }
+
+  function closeCountryMenu() {
+    const menu = document.getElementById("countryCodeMenu");
+    const button = document.getElementById("countryCodeButton");
+    menu?.classList.add("hidden");
+    button?.setAttribute("aria-expanded", "false");
+  }
+
+  function selectCountryCode(code: string) {
+    const select = document.getElementById(
+      "countryCodeSelect"
+    ) as HTMLSelectElement | null;
+    const label = document.getElementById("countryCodeLabel");
+    const flag = document.getElementById("countryCodeFlag");
+    const button = document.getElementById("countryCodeButton");
+    const option = document.querySelector<HTMLButtonElement>(
+      `#countryCodeMenu [data-country="${code}"]`
+    );
+    if (select) select.value = COUNTRY_FLAGS[code] ? code : "1";
+    const dial = `+${select?.value || "1"}`;
+    if (label) label.textContent = dial;
+    if (flag) {
+      flag.setAttribute("data-flag-code", code);
+      flag.innerHTML = COUNTRY_FLAGS[code] || "";
+    }
+    const name = option?.getAttribute("data-country-name") || "";
+    button?.setAttribute(
+      "aria-label",
+      `Country code, ${name} ${dial}`
+    );
+    document
+      .querySelectorAll<HTMLButtonElement>("#countryCodeMenu [data-country]")
+      .forEach((item) => {
+        item.classList.toggle("bg-stone-50", item.dataset.country === code);
+      });
+    closeCountryMenu();
   }
 
   function renderSearchResults(results: ItunesTrack[]) {
@@ -1010,6 +1067,8 @@ export function initWeddingSite() {
     ) {
       searchResultsDropdown.classList.add("hidden");
     }
+    const countryPicker = document.getElementById("countryCodePicker");
+    if (countryPicker && !countryPicker.contains(target)) closeCountryMenu();
   };
   document.addEventListener("click", outsideClick);
 
@@ -1162,6 +1221,29 @@ export function initWeddingSite() {
   const guestSearchInput = document.getElementById("guestSearchInput");
   const countryCodeHandler = () => syncCountryCodeField();
   guestSearchInput?.addEventListener("input", countryCodeHandler);
+  paintCountryFlags();
+  selectCountryCode("1");
+  const countryCodeButton = document.getElementById("countryCodeButton");
+  const countryMenu = document.getElementById("countryCodeMenu");
+  const countryButtonHandler = () => {
+    if (countryCodeButton?.disabled) return;
+    const open = countryMenu?.classList.contains("hidden");
+    if (open) {
+      countryMenu?.classList.remove("hidden");
+      countryCodeButton?.setAttribute("aria-expanded", "true");
+    } else {
+      closeCountryMenu();
+    }
+  };
+  const countryOptionHandler = (event: Event) => {
+    const option = (event.target as HTMLElement | null)?.closest(
+      "[data-country]"
+    ) as HTMLButtonElement | null;
+    if (!option?.dataset.country) return;
+    selectCountryCode(option.dataset.country);
+  };
+  countryCodeButton?.addEventListener("click", countryButtonHandler);
+  countryMenu?.addEventListener("click", countryOptionHandler);
   syncCountryCodeField();
 
   fetch("/api/auth/login")
@@ -1193,5 +1275,7 @@ export function initWeddingSite() {
     adminShowPending?.removeEventListener("click", showPendingHandler);
     adminDashboard?.removeEventListener("click", adminPageHandler);
     guestSearchInput?.removeEventListener("input", countryCodeHandler);
+    countryCodeButton?.removeEventListener("click", countryButtonHandler);
+    countryMenu?.removeEventListener("click", countryOptionHandler);
   };
 }

@@ -48,11 +48,16 @@ from public.guests;
 
 revoke all on table public.family_invites from anon, authenticated;
 
--- 562 is a US area code. The old row stored Mexico's 52 in front of it.
+-- The guest sheet lists Luis Parra under country code 52.
 update public.guests
 set phone = '5626447440',
-    country_code = '1'
-where phone in ('525626447440', '5215626447440');
+    country_code = '52'
+where phone in ('525626447440', '5215626447440', '5626447440')
+  and (
+    lower(name) like '%luis parra%'
+    or lower(email) = 'luis11parra@gmail.com'
+    or phone in ('525626447440', '5215626447440')
+  );
 
 -- Mark Salvie
 update public.guests
@@ -195,7 +200,7 @@ values
   ('7134479685', 'jeff.brannigan@gmail.com', '1', 'Jeff', 'Brannigan', 'Katie & Jeff Brannigan', 'Jeff Brannigan', 'both'),
   ('8326128277', 'dane.thorwaldson@gmail.com', '1', 'Dane', 'Thorwaldson', 'Dane Thorwaldson', 'Dane Thorwaldson', 'both'),
   ('8327296266', 'sako@tajianent.com', '1', 'Sako', 'Tajian', 'The Tajian Family', 'Sako Tajian', 'both'),
-  ('5626447440', 'luis11parra@gmail.com', '1', 'Luis', 'Parra', 'The Parra''s', 'Luis Parra', 'both'),
+  ('5626447440', 'luis11parra@gmail.com', '52', 'Luis', 'Parra', 'The Parra''s', 'Luis Parra', 'both'),
   ('8166957734', null, '1', 'Hesse', 'McGraw', 'Cobi Newton & Hesse McGraw', 'Hesse McGraw', 'both'),
   ('4106934525', 'm.arroyo20@gmail.com', '1', 'Camila', 'Topke', 'Arroyo Topke', 'Camila Topke', 'both'),
   ('9792045891', 'afmaqui@gmail.com', '1', 'Augus', 'Maqui', 'The Maqui Family', 'Augus Maqui', 'both'),

@@ -225,7 +225,7 @@ export async function findGuestByEmail(email: string) {
 }
 
 /** Country codes that appear on the guest list. */
-export const LOGIN_COUNTRY_CODES = ["1", "44"] as const;
+export const LOGIN_COUNTRY_CODES = ["1", "44", "52"] as const;
 
 export function loginCountryCode(value: string | null | undefined): string {
   const digits = normalizePhone(value || "");
