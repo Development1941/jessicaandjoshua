@@ -1223,7 +1223,9 @@ export function initWeddingSite() {
   guestSearchInput?.addEventListener("input", countryCodeHandler);
   paintCountryFlags();
   selectCountryCode("1");
-  const countryCodeButton = document.getElementById("countryCodeButton");
+  const countryCodeButton = document.getElementById(
+    "countryCodeButton"
+  ) as HTMLButtonElement | null;
   const countryMenu = document.getElementById("countryCodeMenu");
   const countryButtonHandler = () => {
     if (countryCodeButton?.disabled) return;
