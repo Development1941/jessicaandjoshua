@@ -57,3 +57,22 @@ create unique index if not exists guests_email_unique_idx
 
 alter table public.guests
   add column if not exists country_code text;
+
+alter table public.guests
+  add column if not exists invited_brunch boolean
+  generated always as (tier in ('brunch', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invited_bar boolean
+  generated always as (tier in ('night', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invite_label text
+  generated always as (
+    case tier
+      when 'both' then 'Every event'
+      when 'brunch' then 'Brunch only'
+      when 'night' then 'Bar only'
+      else tier
+    end
+  ) stored;

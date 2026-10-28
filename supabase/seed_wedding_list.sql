@@ -14,6 +14,40 @@ begin;
 alter table public.guests
   add column if not exists country_code text;
 
+alter table public.guests
+  add column if not exists invited_brunch boolean
+  generated always as (tier in ('brunch', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invited_bar boolean
+  generated always as (tier in ('night', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invite_label text
+  generated always as (
+    case tier
+      when 'both' then 'Every event'
+      when 'brunch' then 'Brunch only'
+      when 'night' then 'Bar only'
+      else tier
+    end
+  ) stored;
+
+create or replace view public.family_invites
+with (security_invoker = true) as
+select
+  id,
+  addressee as family,
+  name as guest,
+  phone,
+  email,
+  invited_brunch as brunch,
+  invited_bar as bar,
+  invite_label as invite
+from public.guests;
+
+revoke all on table public.family_invites from anon, authenticated;
+
 -- 562 is a US area code. The old row stored Mexico's 52 in front of it.
 update public.guests
 set phone = '5626447440',

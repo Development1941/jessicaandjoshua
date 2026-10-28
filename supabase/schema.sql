@@ -13,6 +13,16 @@ create table if not exists public.guests (
   name text not null default 'Guest',
   tier text not null default 'both' check (tier in ('both', 'brunch', 'night')),
   country_code text,
+  invited_brunch boolean generated always as (tier in ('brunch', 'both')) stored,
+  invited_bar boolean generated always as (tier in ('night', 'both')) stored,
+  invite_label text generated always as (
+    case tier
+      when 'both' then 'Every event'
+      when 'brunch' then 'Brunch only'
+      when 'night' then 'Bar only'
+      else tier
+    end
+  ) stored,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -68,3 +78,38 @@ alter table public.rsvps enable row level security;
 -- Public clients cannot read/write tables directly.
 -- Next.js API routes use the service role key (bypasses RLS).
 -- Guest rows live in seed_wedding_list.sql. Run that after this file.
+
+-- Existing databases: create table above does not add new columns.
+alter table public.guests
+  add column if not exists invited_brunch boolean
+  generated always as (tier in ('brunch', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invited_bar boolean
+  generated always as (tier in ('night', 'both')) stored;
+
+alter table public.guests
+  add column if not exists invite_label text
+  generated always as (
+    case tier
+      when 'both' then 'Every event'
+      when 'brunch' then 'Brunch only'
+      when 'night' then 'Bar only'
+      else tier
+    end
+  ) stored;
+
+create or replace view public.family_invites
+with (security_invoker = true) as
+select
+  id,
+  addressee as family,
+  name as guest,
+  phone,
+  email,
+  invited_brunch as brunch,
+  invited_bar as bar,
+  invite_label as invite
+from public.guests;
+
+revoke all on table public.family_invites from anon, authenticated;
