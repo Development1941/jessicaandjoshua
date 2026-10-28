@@ -1,11 +1,8 @@
--- Clear data, add guest name/email fields, reseed test guests.
--- Supabase: SQL Editor → New query → paste → Run.
+-- Add guest name/email/country fields.
+-- Does not delete guests or RSVPs.
+-- Guest rows are loaded by seed_wedding_list.sql.
 
--- 1) Delete all existing rows (RSVPs first because of guest_id FK)
-truncate table public.rsvps restart identity cascade;
-truncate table public.guests restart identity cascade;
-
--- 2) Column updates
+-- Column updates
 alter table public.guests
   alter column phone drop not null;
 
@@ -58,17 +55,5 @@ create unique index if not exists guests_email_unique_idx
   on public.guests (lower(email))
   where email is not null and email <> '';
 
--- 3) Seed test guests
-insert into public.guests (phone, email, first_name, last_name, addressee, name, tier)
-values
-  ('7135550101', 'jane@example.com', 'Jane', 'Doe', 'The Doe Family', 'Jane Doe', 'both'),
-  ('7135550102', 'grandma@example.com', 'Grandma', 'Smith', 'The Smith Family', 'Grandma Smith', 'brunch'),
-  ('7135550103', 'alex@example.com', 'Alex', 'Johnson', 'The Johnson Family', 'Alex Johnson', 'night')
-on conflict (phone) do update
-set
-  email = excluded.email,
-  first_name = excluded.first_name,
-  last_name = excluded.last_name,
-  addressee = excluded.addressee,
-  name = excluded.name,
-  tier = excluded.tier;
+alter table public.guests
+  add column if not exists country_code text;

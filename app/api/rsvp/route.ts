@@ -54,6 +54,7 @@ export async function POST(request: Request) {
             addressee: String(data.addressee || ""),
             name: String(data.name || ""),
             tier: data.tier as GuestTier,
+            country_code: null,
           }
         : null;
     }

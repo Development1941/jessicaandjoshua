@@ -1,0 +1,91 @@
+﻿party,Family Name,Country code,lookup cell number,relationship,names,child,Brunch Only,Bar Invite,Both,Invite,Notes
+1,Mr. & Mrs Rodriguez,1,7133033129,Family,Everardo Rodriguez,,x,,,Brunch only,
+2,Blake & Kristeen Joiner,1,7134474591,Family,Kristeen Joiner,,,,x,Every event,
+3,Mr. & Mrs. Ibarra,1,8322571081,Family,Esther Ibarra,,x,,,Brunch only,
+4,Ibarra Fam,1,8328201130,Family,Jacob Ibarra,,,,x,Every event,
+5,Mr. & Mrs. Hector Rodriguez & family,1,8324043499,Family,Hector Rodriguez,,x,,,Brunch only,Previous list had every event; this sheet has brunch only.
+6,The Rodriguez Family,1,7135049708,Family,Mario Rodriguez,,x,,,Brunch only,Previous list had every event; this sheet has brunch only.
+7,Albert Rodriguez and Gabby Triveline,1,2818146934,Family,Albert Rodriguez,,,,x,Every event,
+8,Tina Buchanan,1,8324777411,Family,Tina Buchanan,,x,,,Brunch only,
+9,Buchanan Family,1,2818142428,Family,Jonathan Buchanan,,,,x,Every event,
+10,Victor Rodriguez and Family,1,3108445126,Family,Victor Rodriguez,,x,,,Brunch only,Previous list had every event; this sheet has brunch only.
+11,The Rodriguez Family,1,2146625555,Family,Ricardo Rodriguez,,x,,,Brunch only,Previous list had every event; this sheet has brunch only.
+12,Mr. & Mrs. Ochoa,1,7132036077,Family,Gonzalo Ochoa,,x,,,Brunch only,
+13,The Rodriguez Family,1,8326073778,Family,Berzayda Ochoa,,,,x,Every event,Party number 13 is shared by 2 households.
+13,The Ochoa-Rosales Family,1,7133781088,Family,Gonzalo Ochoa III,,,,x,Every event,Previous list named this number Gonzalo & Janelle Ochoa. Party number 13 is shared by 2 households.
+14,Mrs. Rahman,1,7138262507,Family,Estela Rahman,,x,,,Brunch only,
+15,The Rahman Family,1,2818767882,Family,Joshua Rahman,,,,x,Every event,Previous list named this number Maddy Rahman.
+16,The Ramirez Family,1,7138268731,Family,Sasha Rahman,,,,x,Every event,
+17,The Mathews Family,1,8325663799,Friend,Jesna Mathews,,,,x,Every event,
+18,Natalie Walker & Hunter Hambright,1,4238274000,Friend,Natalie Walker,,,,x,Every event,
+19,Samantha Hunt,1,8327941798,Friend,Samantha Hunt,,,,x,Every event,
+20,England Todd & Patrick Butler,1,3305757872,Friend,England Todd,,,,x,Every event,
+21,The Pogues,1,2165389565,Friend,Bianca Badescu,,,,x,Every event,
+22,The Marron Family,1,7244178255,Friend,Megan Marron,,,,x,Every event,Previous list named this number Andres Marron.
+23,The Stubenrouch Family,1,9524121730,Friend,Katelyn Stubenrouch,,,,x,Every event,Previous list named this number Travis and Katelyn Stubenrouch.
+24,The Heisers,1,7138166619,Friend,Bridgett Falcone,,,,x,Every event,
+25,Libby Gravatt & Tim Caws,1,8326603434,Friend,Tim Caws,,,,x,Every event,
+26,The Kramer Family,1,8329717488,Friend,Eleni Kramer,,,,x,Every event,Shares lookup number 8329717488 with Mark Salvie. The site can store that number on one login only.
+27,The Kramer Family,1,8329717488,Friend,Mark Salvie,,,,x,Every event,Previous phone on file was 4696443647. This sheet uses 8329717488 instead. Shares lookup number 8329717488 with Eleni Kramer. The site can store that number on one login only.
+28,Rob Erni & Diandra Breen,1,2817702719,Friend,Rob Erni,,,,x,Every event,
+29,The Rob Coffman,1,9794924118,Friend,Rob Coffman,,,,x,Every event,
+30,Katie & Jeff Brannigan,1,7134479685,Friend,Jeff Brannigan,,,,x,Every event,
+31,Dane Thorwaldson,1,8326128277,Friend,Dane Thorwaldson,,,,x,Every event,
+32,The Tajian Family,1,8327296266,Friend,Sako Tajian,,,,x,Every event,
+33,The Parra's,1,5626447440,Friend,Luis Parra,,,,x,Every event,"Country code changed from 52 to 1. 562 is a US area code, not a Mexico number."
+34,Cobi Newton & Hesse McGraw,1,8166957734,Friend,Hesse McGraw,,,,x,Every event,
+35,Arroyo Topke,1,4106934525,Friend,Camila Topke,,,,x,Every event,Previous list named this number Marco Arroyo.
+36,The Maqui Family,1,9792045891,Friend,Augus Maqui,,,,x,Every event,Previous list named this number Agustin Maqui.
+37,Nicole & Sina,1,8327293364,Friend,Nicole Bhatnagar,,,,x,Every event,
+38,Lauren McGinnity,1,7243163508,Friend,Lauren McGinnity,,,,x,Every event,
+39,The Medina Party,1,6178958651,Friend,Daniela Medina,,,,x,Every event,
+40,Joshua Espiñedo & Nathan Reedy,1,7134800797,Friend,Joshua Espiñedo,,,,x,Every event,Spelling aligned to Espiñedo on the household name.
+41,Stephanie & Jackson Smith,1,7138946687,Friend,Jackson Smith,,,,x,Every event,
+42,Bobby Heugel,1,7132568086,Friend,Bobby Heugel,,,,x,Every event,Guest name spelling aligned to the household name Bobby Heugel.
+43,Bouzas Garcia Fam,1,8327416772,Friend,Brandi Garcia,,,,x,Every event,
+44,Jaclyn Diaz,1,8323681922,Friend,Jaclyn Diaz,,,,x,Every event,
+45,Kelly Garcia & Taylor Hastings,1,8324234571,Friend,Kelly Garcia,,,,x,Every event,
+46,The Rausers,1,7344762586,Friend,Rick Rauser,,,,x,Every event,
+47,Lemaster Residence,1,3253403870,Friend,Levi Lemaster,,,,x,Every event,
+48,The Ackerley's,1,8323061158,Friend,Ben Acherly,,,,x,Every event,
+49,George + Jaime,1,7134433398,Friend,George Johnson,,,,x,Every event,Previous list named this number George Johnston + Jaime Loera.
+50,The Hollimon’s,1,6128893778,Friend,Carl Hollimon,,,,x,Every event,
+51,Connor & Chae Eun,1,8328510569,Friend,Connor Walsh,,,,x,Every event,
+52,Das,1,7132014409,Friend,Rahkee Das,,x,,,Brunch only,Previous list named this number Rakhee Das. Previous list had every event; this sheet has brunch only.
+53,Mr. & Mrs. Spector,1,7133046660,Friend,Bryan Spector,,x,,,Brunch only,Previous list named this number Brian Spector. Previous list had every event; this sheet has brunch only.
+54,The Bassila’s,1,7138281877,Friend,Michael Bassila,,,,x,Every event,
+55,Schott Family,1,2817321792,Friend,Kevin Schott,,,,x,Every event,
+56,Chris Nguyen,,,Friend,Chris Nguyen,,,x,,Bar only,"No lookup number, so this guest cannot sign in by phone yet."
+57,Michael Viviano,,,Friend,Michael Viviano,,,x,,Bar only,"No lookup number, so this guest cannot sign in by phone yet."
+58,Grace Mihardja,1,8323024437,Friend,Grace Mihardja,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+59,Josh Pierre,1,8325451722,Friend,Josh Pierre,,,x,,Bar only,
+60,Sanchez Family,1,2817066339,Friend,Jose Sanchez,,,,x,Every event,
+61,Ian Wells,1,7134431878,Friend,Ian Wells,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+62,The Meirs,1,7328042996,Friend,Michael Meir,,,x,,Bar only,Previous list named this number Lindsay Meir. Previous list had every event; this sheet has bar only.
+63,The Vela-Black Family,1,7137572459,Friend,Cody Vela,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+64,John Humphreys,1,5122844977,Friend,John Humphreys,,,x,,Bar only,
+65,The Sorensen Family,1,8326332870,Friend,Carl Sorensen,,,,x,Every event,Previous list named this number Beth and Carl Sorensen.
+66,The Bickham’s,1,4096733092,Friend,Micah Bickham,,,,x,Every event,
+67,Mr. & Mrs. Justin Harbison,1,7132568318,Friend,Justy Harbison,,,,x,Every event,Previous list named this number Justin Harbison.
+68,Ashley & Wes Dillard,1,7136287064,Friend,Wes Dillard,,,,x,Every event,
+69,Danielson Laniers,1,2027665636,Friend,Will Danielson Lanier,,,,x,Every event,
+70,The Armour Family,1,8329696288,Friend,Jonathan Armor,,,,x,Every event,
+71,Collins Family,1,8323315150,Friend,Presley Collins,,,,x,Every event,
+72,Matt & Hillary Goodwin,1,8326872619,Friend,Matt Goodwin,,,,x,Every event,
+73,The Salvie Family,1,4696443758,Friend,John Salvie,,,x,,Bar only,Capitalization corrected. Previous list had every event; this sheet has bar only.
+74,Brent Nettles,1,2819246360,Friend,Brent Nettles,,,,x,Every event,
+75,The Lynches,1,2816842620,Friend,Tom Lynch,,,,x,Every event,
+76,Riccio Family,1,8323871576,Friend,Felipe Riccio,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+77,Mr. & Mrs. Herrera,1,8324849939,Friend,Alejandro Herrera,,,,x,Every event,Spelling corrected from alejando to Alejandro.
+78,The Lupton’s,1,8324639446,Friend,Blake Lupton,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+79,Pellizzer’s,1,9172940314,Friend,Sebastiano Pellizzer,,,,x,Every event,Guest name spelling aligned to the household name Pellizzer.
+80,Ms. Cara Lambright,1,8328146555,Friend,Cara Lambright,,,,x,Every event,
+81,Natalia Rachlin & Jerome Milongo,44,7360601228,Friend,Jerome Milongo,,,,x,Every event,Country code 44 checked: this is a UK mobile number and the code is correct.
+82,The Bush Family,1,8324526796,Friend,Pierce Bush,,,,x,Every event,
+83,Zane Ramirez,1,4158714536,Friend,Zane Ramirez,,,x,,Bar only,Previous list had every event; this sheet has bar only.
+84,Jessika Rodriguez,1,7133034636,Friend,Jessika Rodriguez,,,,x,Every event,Last name filled from the household name.
+,Joshua Ibarra,1,8327978346,Friend,Joshua Ibarra,,,,x,Every event,Last name filled from the household name. No party number on the sheet.
+85,Abuelita Rodriguez,,,Family,Abuelita Rodriguez,,x,,,Brunch only,"Household name was #N/A, so it now uses the guest name. No lookup number, so this guest cannot sign in by phone yet."
+86,Lloyd Luco,,,Friend,Lloyd Luco,,x,,,Brunch only,"Capitalization corrected. Household name was #N/A, so it now uses the guest name. No lookup number, so this guest cannot sign in by phone yet."
+87,Mr. & Mrs. Little,1,9709037755,Friend,Mr. & Mrs. Little,,x,,,Brunch only,
+88,Irene Pina,1,7137256407,Friend,Irene Pina,,x,,,Brunch only,

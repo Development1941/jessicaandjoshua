@@ -27,6 +27,7 @@ function mapGuest(row: GuestRecord): GuestRecord {
     addressee: row.addressee || "",
     name: row.name || guestDisplayName(row),
     tier: row.tier as GuestTier,
+    country_code: row.country_code || null,
   };
 }
 
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
 
     if (otpEnabled && !emailLogin) {
       const anon = getSupabaseAnon();
-      const e164 = toE164(digits);
+      const e164 = toE164(digits, guest.country_code || "1");
 
       if (body.otp) {
         const { error: verifyError } = await anon.auth.verifyOtp({

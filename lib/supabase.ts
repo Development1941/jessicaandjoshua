@@ -42,13 +42,27 @@ export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
 }
 
-/** Digit forms that should match a guest row stored as 10 digits or with a leading 1. */
+/** Digit forms that should match a guest row stored as a national number. */
 export function phoneLookupKeys(value: string): string[] {
   const clean = normalizePhone(value);
   const keys = new Set<string>();
-  if (clean.length >= 10) keys.add(clean);
-  if (clean.length === 11 && clean.startsWith("1")) keys.add(clean.slice(1));
-  if (clean.length > 10) keys.add(clean.slice(-10));
+  const add = (key: string) => {
+    if (key.length >= 10) keys.add(key);
+  };
+  if (!clean) return [];
+
+  add(clean);
+  if (clean.startsWith("0")) add(clean.replace(/^0+/, ""));
+  if (clean.length === 11 && clean.startsWith("1")) add(clean.slice(1));
+  if (clean.startsWith("44") && clean.length >= 12) {
+    add(clean.slice(2).replace(/^0+/, ""));
+  }
+  if (clean.startsWith("52") && clean.length >= 12) {
+    const national = clean.slice(2);
+    add(national);
+    if (national.startsWith("1") && national.length === 11) add(national.slice(1));
+  }
+  if (clean.length > 10) add(clean.slice(-10));
   return [...keys];
 }
 
@@ -93,10 +107,13 @@ function mapGuestRow(row: Record<string, unknown> | null): GuestRecord | null {
     addressee,
     name: personal,
     tier: row.tier as GuestTier,
+    country_code: row.country_code ? String(row.country_code) : null,
   };
 }
 
 const GUEST_SELECT =
+  "id, phone, email, first_name, last_name, addressee, name, tier, country_code";
+const GUEST_SELECT_NO_COUNTRY =
   "id, phone, email, first_name, last_name, addressee, name, tier";
 const GUEST_SELECT_FALLBACK = "id, phone, email, name, tier";
 
@@ -106,10 +123,13 @@ async function selectGuests(
     error: { message: string } | null;
   }>
 ) {
-  const primary = await run(GUEST_SELECT);
+  let primary = await run(GUEST_SELECT);
+  if (primary.error && /country_code/i.test(primary.error.message)) {
+    primary = await run(GUEST_SELECT_NO_COUNTRY);
+  }
   if (!primary.error) return primary;
 
-  if (/first_name|last_name|addressee|email/i.test(primary.error.message)) {
+  if (/first_name|last_name|addressee|email|country_code/i.test(primary.error.message)) {
     const fallback = await run(GUEST_SELECT_FALLBACK);
     if (fallback.error) {
       const legacy = await run("id, phone, name, tier");
@@ -210,12 +230,14 @@ export async function findGuestByLogin(query: string) {
   return findGuestByPhone(raw);
 }
 
-export function toE164(digits: string, defaultCountry = "1"): string {
+export function toE164(digits: string, countryCode = "1"): string {
   const clean = normalizePhone(digits);
-  if (clean.startsWith("1") && clean.length === 11) return `+${clean}`;
-  if (clean.length === 10) return `+${defaultCountry}${clean}`;
-  if (digits.trim().startsWith("+")) return `+${clean}`;
-  return `+${clean}`;
+  const cc = normalizePhone(countryCode || "1") || "1";
+  if (!clean) return "";
+  if (clean.startsWith(cc) && clean.length >= cc.length + 10) return `+${clean}`;
+  if (digits.trim().startsWith("+") && clean.length > 10) return `+${clean}`;
+  const national = clean.replace(/^0+/, "");
+  return `+${cc}${national}`;
 }
 
 export type GuestTier = "both" | "brunch" | "night";
@@ -229,4 +251,5 @@ export type GuestRecord = {
   addressee: string;
   name: string;
   tier: GuestTier;
+  country_code: string | null;
 };

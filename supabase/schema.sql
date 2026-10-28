@@ -12,6 +12,7 @@ create table if not exists public.guests (
   addressee text not null default '',
   name text not null default 'Guest',
   tier text not null default 'both' check (tier in ('both', 'brunch', 'night')),
+  country_code text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -66,16 +67,4 @@ alter table public.rsvps enable row level security;
 
 -- Public clients cannot read/write tables directly.
 -- Next.js API routes use the service role key (bypasses RLS).
-
-insert into public.guests (phone, email, first_name, last_name, addressee, name, tier)
-values
-  ('7135550101', 'jane@example.com', 'Jane', 'Doe', 'The Doe Family', 'Jane Doe', 'both'),
-  ('7135550102', 'grandma@example.com', 'Grandma', 'Smith', 'The Smith Family', 'Grandma Smith', 'brunch'),
-  ('7135550103', 'alex@example.com', 'Alex', 'Johnson', 'The Johnson Family', 'Alex Johnson', 'night')
-on conflict (phone) do update
-set first_name = excluded.first_name,
-    last_name = excluded.last_name,
-    addressee = excluded.addressee,
-    name = excluded.name,
-    tier = excluded.tier,
-    email = excluded.email;
+-- Guest rows live in seed_wedding_list.sql. Run that after this file.
