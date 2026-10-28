@@ -169,7 +169,7 @@ async function selectGuests(
   return primary;
 }
 
-export async function findGuestByPhone(phone: string) {
+export async function findGuestByPhone(phone: string, countryCode?: string | null) {
   const keys = phoneLookupKeys(phone);
   if (!keys.length) {
     return { guest: null as GuestRecord | null, error: null as string | null };
@@ -185,9 +185,13 @@ export async function findGuestByPhone(phone: string) {
   const rows = ((data || []) as Record<string, unknown>[]).map((row) =>
     mapGuestRow(row)
   ).filter(Boolean) as GuestRecord[];
+  const selected = normalizePhone(countryCode || "");
+  const matching = selected
+    ? rows.filter((row) => (row.country_code || "") === selected)
+    : rows;
   const preferred = keys.find((key) => key.length === 10);
   const guest =
-    rows.find((row) => row.phone === preferred) || rows[0] || null;
+    matching.find((row) => row.phone === preferred) || matching[0] || null;
   return { guest, error: null };
 }
 
@@ -220,14 +224,22 @@ export async function findGuestByEmail(email: string) {
   };
 }
 
-export async function findGuestByLogin(query: string) {
+/** Country codes that appear on the guest list. */
+export const LOGIN_COUNTRY_CODES = ["1", "44"] as const;
+
+export function loginCountryCode(value: string | null | undefined): string {
+  const digits = normalizePhone(value || "");
+  return (LOGIN_COUNTRY_CODES as readonly string[]).includes(digits) ? digits : "1";
+}
+
+export async function findGuestByLogin(query: string, countryCode?: string | null) {
   const raw = (query || "").trim();
   if (!raw) {
     return { guest: null as GuestRecord | null, error: null as string | null };
   }
 
   if (isEmail(raw)) return findGuestByEmail(raw);
-  return findGuestByPhone(raw);
+  return findGuestByPhone(raw, countryCode);
 }
 
 export function toE164(digits: string, countryCode = "1"): string {

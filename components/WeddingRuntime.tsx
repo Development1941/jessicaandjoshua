@@ -17,7 +17,7 @@ export default function WeddingRuntime() {
 
   return (
     <ToastContainer
-      position="bottom-right"
+      position="top-right"
       autoClose={4000}
       hideProgressBar={false}
       newestOnTop

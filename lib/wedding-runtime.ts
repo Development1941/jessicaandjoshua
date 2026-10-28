@@ -37,7 +37,6 @@ declare global {
     showPage: (pageName: string) => void;
     setGuestTier: (tier: Guest["tier"], guest?: Guest | string) => void;
     performGuestLookup: () => Promise<void>;
-    quickSearch: (phoneNum: string) => void;
     selectSong: (
       trackName: string,
       artistName: string,
@@ -129,14 +128,14 @@ function showToast(
       isLoading: false,
       autoClose: 4000,
       closeOnClick: true,
-      position: "bottom-right",
+      position: "top-right",
     });
     return;
   }
   toast[type](message, {
     autoClose: 4000,
     closeOnClick: true,
-    position: "bottom-right",
+    position: "top-right",
   });
 }
 
@@ -336,9 +335,36 @@ export function initWeddingSite() {
       .replace(/"/g, "&quot;");
   }
 
-  function tableCell(value: unknown): string {
+  const ADMIN_PAGE_SIZE = 10;
+  type AdminPerson = {
+    family: string;
+    guest: string;
+    phone: string;
+    email: string;
+    invite: string;
+  };
+  type AdminResponse = AdminPerson & {
+    brunchAttending: string;
+    brunchKids: string;
+    barAttending: string;
+    dietary: string;
+    song: string;
+    artist: string;
+    updated: string;
+  };
+  let adminRsvps: AdminResponse[] = [];
+  let adminPending: AdminPerson[] = [];
+  let adminAttendees: AdminPerson[] = [];
+  let rsvpPage = 1;
+  let attendeePage = 1;
+  let rsvpView: "received" | "pending" = "received";
+
+  function tableCell(value: unknown, sticky = false): string {
     const text = value == null || String(value).trim() === "" ? "—" : String(value);
-    return `<td class="px-4 py-3 align-top whitespace-nowrap">${escapeHtml(text)}</td>`;
+    const stickyClass = sticky
+      ? "sticky left-0 z-10 bg-white shadow-[1px_0_0_0_rgb(231,229,228)]"
+      : "";
+    return `<td class="px-4 py-3 align-top ${stickyClass}">${escapeHtml(text)}</td>`;
   }
 
   function answerLabel(value: string): string {
@@ -360,9 +386,173 @@ export function initWeddingSite() {
     });
   }
 
+  function pageCount(total: number): number {
+    return Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
+  }
+
+  function pageSlice<T>(rows: T[], page: number): T[] {
+    const start = (page - 1) * ADMIN_PAGE_SIZE;
+    return rows.slice(start, start + ADMIN_PAGE_SIZE);
+  }
+
+  function renderPager(
+    element: HTMLElement | null,
+    page: number,
+    total: number,
+    table: "rsvp" | "attendees"
+  ) {
+    if (!element) return;
+    const pages = pageCount(total);
+    const safePage = Math.min(page, pages);
+    const start = total === 0 ? 0 : (safePage - 1) * ADMIN_PAGE_SIZE + 1;
+    const end = Math.min(total, safePage * ADMIN_PAGE_SIZE);
+    const buttonClass =
+      "px-3 py-1.5 rounded-full border border-stone-300 bg-white text-xs font-semibold text-stone-700 hover:border-brand-plum disabled:opacity-40 disabled:hover:border-stone-300";
+    element.innerHTML = `
+      <p>Showing ${start}–${end} of ${total}</p>
+      <div class="flex items-center gap-2">
+        <button type="button" class="${buttonClass}" data-admin-table="${table}" data-admin-page="prev" ${safePage <= 1 ? "disabled" : ""}>Previous</button>
+        <span class="min-w-16 text-center font-semibold text-stone-800">${safePage} / ${pages}</span>
+        <button type="button" class="${buttonClass}" data-admin-table="${table}" data-admin-page="next" ${safePage >= pages ? "disabled" : ""}>Next</button>
+      </div>`;
+  }
+
+  function setRsvpToggle(view: "received" | "pending") {
+    const received = document.getElementById("adminShowReceived");
+    const pending = document.getElementById("adminShowPending");
+    const active =
+      "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-plum text-white text-xs font-semibold tracking-wide";
+    const idle =
+      "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-300 text-stone-700 text-xs font-semibold tracking-wide hover:border-brand-plum";
+    if (received) {
+      received.className = view === "received" ? active : idle;
+      received.setAttribute("aria-pressed", view === "received" ? "true" : "false");
+    }
+    if (pending) {
+      pending.className = view === "pending" ? active : idle;
+      pending.setAttribute("aria-pressed", view === "pending" ? "true" : "false");
+    }
+  }
+
+  function renderRsvpTable() {
+    const body = document.getElementById("adminRsvpBody");
+    const head = document.getElementById("adminRsvpHead");
+    const count = document.getElementById("adminRsvpCount");
+    const receivedTotal = document.getElementById("adminReceivedTotal");
+    const pendingTotal = document.getElementById("adminPendingTotal");
+    if (receivedTotal) receivedTotal.textContent = String(adminRsvps.length);
+    if (pendingTotal) pendingTotal.textContent = String(adminPending.length);
+    setRsvpToggle(rsvpView);
+
+    if (rsvpView === "pending") {
+      const pages = pageCount(adminPending.length);
+      if (rsvpPage > pages) rsvpPage = pages;
+      if (head) {
+        head.innerHTML = `<tr>
+          <th class="sticky left-0 z-10 bg-stone-50 px-4 py-3 font-semibold">Family</th>
+          <th class="px-4 py-3 font-semibold">Guest</th>
+          <th class="px-4 py-3 font-semibold">Phone</th>
+          <th class="px-4 py-3 font-semibold">Email</th>
+          <th class="px-4 py-3 font-semibold">Invite</th>
+        </tr>`;
+      }
+      if (count) {
+        count.textContent =
+          adminPending.length === 1
+            ? "1 household has not responded"
+            : `${adminPending.length} households have not responded`;
+      }
+      if (body) {
+        const rows = pageSlice(adminPending, rsvpPage);
+        body.innerHTML = rows.length
+          ? rows
+              .map(
+                (row) =>
+                  `<tr>${tableCell(row.family, true)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}</tr>`
+              )
+              .join("")
+          : `<tr><td class="px-4 py-6 text-stone-500" colspan="5">Every household has responded.</td></tr>`;
+      }
+      renderPager(
+        document.getElementById("adminRsvpPager"),
+        rsvpPage,
+        adminPending.length,
+        "rsvp"
+      );
+      return;
+    }
+
+    const pages = pageCount(adminRsvps.length);
+    if (rsvpPage > pages) rsvpPage = pages;
+    if (head) {
+      head.innerHTML = `<tr>
+        <th class="sticky left-0 z-10 bg-stone-50 px-4 py-3 font-semibold">Family</th>
+        <th class="px-4 py-3 font-semibold">Guest</th>
+        <th class="px-4 py-3 font-semibold">Phone</th>
+        <th class="px-4 py-3 font-semibold">Email</th>
+        <th class="px-4 py-3 font-semibold">Invite</th>
+        <th class="px-4 py-3 font-semibold">Brunch</th>
+        <th class="px-4 py-3 font-semibold">Kids</th>
+        <th class="px-4 py-3 font-semibold">Bar</th>
+        <th class="px-4 py-3 font-semibold">Dietary</th>
+        <th class="px-4 py-3 font-semibold">Song</th>
+        <th class="px-4 py-3 font-semibold">Updated</th>
+      </tr>`;
+    }
+    if (count) {
+      count.textContent =
+        adminRsvps.length === 1 ? "1 response" : `${adminRsvps.length} responses`;
+    }
+    if (body) {
+      const rows = pageSlice(adminRsvps, rsvpPage);
+      body.innerHTML = rows.length
+        ? rows
+            .map((row) => {
+              const song = [row.song, row.artist].filter(Boolean).join(" — ");
+              return `<tr>${tableCell(row.family, true)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}${tableCell(answerLabel(row.brunchAttending))}${tableCell(row.brunchKids)}${tableCell(answerLabel(row.barAttending))}${tableCell(row.dietary)}${tableCell(song)}${tableCell(shortWhen(row.updated))}</tr>`;
+            })
+            .join("")
+        : `<tr><td class="px-4 py-6 text-stone-500" colspan="11">No RSVP responses yet.</td></tr>`;
+    }
+    renderPager(
+      document.getElementById("adminRsvpPager"),
+      rsvpPage,
+      adminRsvps.length,
+      "rsvp"
+    );
+  }
+
+  function renderAttendeeTable() {
+    const body = document.getElementById("adminAttendeeBody");
+    const count = document.getElementById("adminAttendeeCount");
+    const pages = pageCount(adminAttendees.length);
+    if (attendeePage > pages) attendeePage = pages;
+    if (count) {
+      count.textContent =
+        adminAttendees.length === 1
+          ? "1 household on the guest list"
+          : `${adminAttendees.length} households on the guest list`;
+    }
+    if (body) {
+      const rows = pageSlice(adminAttendees, attendeePage);
+      body.innerHTML = rows.length
+        ? rows
+            .map(
+              (row) =>
+                `<tr>${tableCell(row.family, true)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}</tr>`
+            )
+            .join("")
+        : `<tr><td class="px-4 py-6 text-stone-500" colspan="5">No guests on the list.</td></tr>`;
+    }
+    renderPager(
+      document.getElementById("adminAttendeePager"),
+      attendeePage,
+      adminAttendees.length,
+      "attendees"
+    );
+  }
+
   async function loadAdminDashboard() {
-    const rsvpBody = document.getElementById("adminRsvpBody");
-    const attendeeBody = document.getElementById("adminAttendeeBody");
     const rsvpCount = document.getElementById("adminRsvpCount");
     const attendeeCount = document.getElementById("adminAttendeeCount");
     if (rsvpCount) rsvpCount.textContent = "Loading responses...";
@@ -372,27 +562,9 @@ export function initWeddingSite() {
       const res = await fetch("/api/admin/dashboard");
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
-        rsvps?: Array<{
-          family: string;
-          guest: string;
-          phone: string;
-          email: string;
-          invite: string;
-          brunchAttending: string;
-          brunchKids: string;
-          barAttending: string;
-          dietary: string;
-          song: string;
-          artist: string;
-          updated: string;
-        }>;
-        attendees?: Array<{
-          family: string;
-          guest: string;
-          phone: string;
-          email: string;
-          invite: string;
-        }>;
+        rsvps?: AdminResponse[];
+        pending?: AdminPerson[];
+        attendees?: AdminPerson[];
       };
       if (!res.ok) {
         showToast("error", data.error || "Could not load admin data.");
@@ -401,38 +573,14 @@ export function initWeddingSite() {
         return;
       }
 
-      const rsvps = data.rsvps || [];
-      const attendees = data.attendees || [];
-      if (rsvpCount) {
-        rsvpCount.textContent =
-          rsvps.length === 1 ? "1 response" : `${rsvps.length} responses`;
-      }
-      if (attendeeCount) {
-        attendeeCount.textContent =
-          attendees.length === 1
-            ? "1 household on the guest list"
-            : `${attendees.length} households on the guest list`;
-      }
-      if (rsvpBody) {
-        rsvpBody.innerHTML = rsvps.length
-          ? rsvps
-              .map(
-                (row) =>
-                  `<tr>${tableCell(row.family)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}${tableCell(answerLabel(row.brunchAttending))}${tableCell(row.brunchKids)}${tableCell(answerLabel(row.barAttending))}${tableCell(row.dietary)}${tableCell(row.song)}${tableCell(row.artist)}${tableCell(shortWhen(row.updated))}</tr>`
-              )
-              .join("")
-          : `<tr><td class="px-4 py-6 text-stone-500" colspan="12">No RSVP responses yet.</td></tr>`;
-      }
-      if (attendeeBody) {
-        attendeeBody.innerHTML = attendees.length
-          ? attendees
-              .map(
-                (row) =>
-                  `<tr>${tableCell(row.family)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}</tr>`
-              )
-              .join("")
-          : `<tr><td class="px-4 py-6 text-stone-500" colspan="5">No guests on the list.</td></tr>`;
-      }
+      adminRsvps = data.rsvps || [];
+      adminPending = data.pending || [];
+      adminAttendees = data.attendees || [];
+      rsvpPage = 1;
+      attendeePage = 1;
+      rsvpView = "received";
+      renderRsvpTable();
+      renderAttendeeTable();
     } catch (error) {
       showToast(
         "error",
@@ -443,7 +591,7 @@ export function initWeddingSite() {
 
   async function downloadRsvpCsv() {
     const downloadToast = toast.loading("Preparing the RSVP spreadsheet...", {
-      position: "bottom-right",
+      position: "top-right",
     });
     try {
       const res = await fetch("/api/admin/rsvps");
@@ -590,12 +738,17 @@ export function initWeddingSite() {
     }
 
     const lookupToast = toast.loading("Checking the guest list...", {
-      position: "bottom-right",
+      position: "top-right",
     });
 
     const looksLikeOtp = /^\d{6}$/.test(rawQuery.replace(/\s/g, ""));
     const login = looksLikeOtp ? pendingLogin : rawQuery;
     const otp = looksLikeOtp ? rawQuery.replace(/\s/g, "") : undefined;
+
+    const countrySelect = document.getElementById(
+      "countryCodeSelect"
+    ) as HTMLSelectElement | null;
+    const countryCode = countrySelect?.value || "1";
 
     if (!looksLikeOtp) {
       pendingLogin = login;
@@ -606,7 +759,11 @@ export function initWeddingSite() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login: pendingLogin || login, otp }),
+        body: JSON.stringify({
+          login: pendingLogin || login,
+          otp,
+          countryCode: isEmail(pendingLogin || login) ? undefined : countryCode,
+        }),
       });
       const data = await res.json();
 
@@ -622,6 +779,7 @@ export function initWeddingSite() {
           input.placeholder = "6-digit code";
           input.focus();
         }
+        syncCountryCodeField();
         return;
       }
 
@@ -638,9 +796,8 @@ export function initWeddingSite() {
       const guest = data.guest as Guest;
       pendingPhone = guest.phone || pendingPhone;
       pendingLogin = guest.email || guest.phone || pendingLogin;
-      if (input) {
-        input.placeholder = "Phone or email, e.g. (713) 555-0101";
-      }
+      if (input) input.placeholder = "Phone or email";
+      syncCountryCodeField();
       setGuestTier(guest.tier, guest);
       showToast(
         "success",
@@ -658,12 +815,18 @@ export function initWeddingSite() {
     }
   }
 
-  function quickSearch(loginValue: string) {
+  function syncCountryCodeField() {
     const input = document.getElementById(
       "guestSearchInput"
     ) as HTMLInputElement | null;
-    if (input) input.value = loginValue;
-    void performGuestLookup();
+    const select = document.getElementById(
+      "countryCodeSelect"
+    ) as HTMLSelectElement | null;
+    if (!select) return;
+    const value = input?.value.trim() || "";
+    const waitingForCode = (input?.placeholder || "").startsWith("6-digit");
+    select.disabled = waitingForCode || isEmail(value);
+    select.classList.toggle("opacity-50", select.disabled);
   }
 
   function renderSearchResults(results: ItunesTrack[]) {
@@ -777,7 +940,6 @@ export function initWeddingSite() {
   window.showPage = showPage;
   window.setGuestTier = setGuestTier;
   window.performGuestLookup = performGuestLookup;
-  window.quickSearch = quickSearch;
   window.selectSong = selectSong;
   window.playPreview = playPreview;
   window.clearSelectedSong = clearSelectedSong;
@@ -960,6 +1122,47 @@ export function initWeddingSite() {
     void downloadRsvpCsv();
   };
   adminDownloadBtn?.addEventListener("click", adminDownloadHandler);
+  const adminShowReceived = document.getElementById("adminShowReceived");
+  const adminShowPending = document.getElementById("adminShowPending");
+  const showReceivedHandler = () => {
+    rsvpView = "received";
+    rsvpPage = 1;
+    renderRsvpTable();
+  };
+  const showPendingHandler = () => {
+    rsvpView = "pending";
+    rsvpPage = 1;
+    renderRsvpTable();
+  };
+  adminShowReceived?.addEventListener("click", showReceivedHandler);
+  adminShowPending?.addEventListener("click", showPendingHandler);
+  const adminDashboard = document.getElementById("adminDashboard");
+  const adminPageHandler = (event: Event) => {
+    const button = (event.target as HTMLElement | null)?.closest(
+      "button[data-admin-page]"
+    ) as HTMLButtonElement | null;
+    if (!button || button.disabled) return;
+    const table = button.getAttribute("data-admin-table");
+    const direction = button.getAttribute("data-admin-page");
+    const step = direction === "next" ? 1 : -1;
+    if (table === "rsvp") {
+      const total = rsvpView === "pending" ? adminPending.length : adminRsvps.length;
+      rsvpPage = Math.min(pageCount(total), Math.max(1, rsvpPage + step));
+      renderRsvpTable();
+    }
+    if (table === "attendees") {
+      attendeePage = Math.min(
+        pageCount(adminAttendees.length),
+        Math.max(1, attendeePage + step)
+      );
+      renderAttendeeTable();
+    }
+  };
+  adminDashboard?.addEventListener("click", adminPageHandler);
+  const guestSearchInput = document.getElementById("guestSearchInput");
+  const countryCodeHandler = () => syncCountryCodeField();
+  guestSearchInput?.addEventListener("input", countryCodeHandler);
+  syncCountryCodeField();
 
   fetch("/api/auth/login")
     .then((res) => res.json())
@@ -986,5 +1189,9 @@ export function initWeddingSite() {
     document.removeEventListener("click", outsideClick);
     rsvpForm?.removeEventListener("submit", submitHandler);
     adminDownloadBtn?.removeEventListener("click", adminDownloadHandler);
+    adminShowReceived?.removeEventListener("click", showReceivedHandler);
+    adminShowPending?.removeEventListener("click", showPendingHandler);
+    adminDashboard?.removeEventListener("click", adminPageHandler);
+    guestSearchInput?.removeEventListener("input", countryCodeHandler);
   };
 }

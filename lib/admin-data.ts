@@ -30,6 +30,8 @@ export type AdminAttendee = {
   invite: string;
 };
 
+export type AdminPending = AdminAttendee;
+
 type RsvpRow = {
   guest_id: string | null;
   guest_phone: string | null;
@@ -97,6 +99,7 @@ export async function adminDenied(): Promise<NextResponse | null> {
 export async function loadAdminRecords(): Promise<{
   rsvps: AdminRsvp[];
   attendees: AdminAttendee[];
+  pending: AdminPending[];
 }> {
   const admin = getSupabaseAdmin();
   const { data: rsvpRows, error: rsvpError } = await admin
@@ -129,10 +132,16 @@ export async function loadAdminRecords(): Promise<{
       .map((guest) => [String(guest.phone), guest])
   );
 
+  const respondedIds = new Set<string>();
+  const respondedPhones = new Set<string>();
   const rsvps: AdminRsvp[] = ((rsvpRows || []) as RsvpRow[]).map((row) => {
     const guest =
       (row.guest_id ? byId.get(row.guest_id) : undefined) ||
       (row.guest_phone ? byPhone.get(row.guest_phone) : undefined);
+    if (guest) respondedIds.add(guest.id);
+    if (row.guest_id) respondedIds.add(row.guest_id);
+    if (row.guest_phone) respondedPhones.add(row.guest_phone);
+    if (guest?.phone) respondedPhones.add(guest.phone);
     return {
       family: guest?.addressee || "",
       guest: row.guest_names || (guest ? guestLabel(guest) : ""),
@@ -153,21 +162,31 @@ export async function loadAdminRecords(): Promise<{
     };
   });
 
-  const attendees: AdminAttendee[] = guests
-    .map((guest) => ({
-      family: guest.addressee || "",
-      guest: guestLabel(guest),
-      phone: guest.phone || "",
-      email: guest.email || "",
-      invite: inviteLabel(guest),
-    }))
-    .sort((a, b) => {
-      const family = a.family.localeCompare(b.family, undefined, {
-        sensitivity: "base",
-      });
-      if (family !== 0) return family;
-      return a.guest.localeCompare(b.guest, undefined, { sensitivity: "base" });
-    });
+  const toAttendee = (guest: GuestRow): AdminAttendee => ({
+    family: guest.addressee || "",
+    guest: guestLabel(guest),
+    phone: guest.phone || "",
+    email: guest.email || "",
+    invite: inviteLabel(guest),
+  });
 
-  return { rsvps, attendees };
+  const byFamily = (a: AdminAttendee, b: AdminAttendee) => {
+    const family = a.family.localeCompare(b.family, undefined, {
+      sensitivity: "base",
+    });
+    if (family !== 0) return family;
+    return a.guest.localeCompare(b.guest, undefined, { sensitivity: "base" });
+  };
+
+  const attendees = guests.map(toAttendee).sort(byFamily);
+  const pending = guests
+    .filter((guest) => {
+      if (respondedIds.has(guest.id)) return false;
+      if (guest.phone && respondedPhones.has(guest.phone)) return false;
+      return true;
+    })
+    .map(toAttendee)
+    .sort(byFamily);
+
+  return { rsvps, attendees, pending };
 }

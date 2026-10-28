@@ -7,6 +7,7 @@ import {
   isEmail,
   normalizeEmail,
   normalizePhone,
+  loginCountryCode,
   phoneLookupKeys,
   toE164,
   type GuestRecord,
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
       email?: string;
       login?: string;
       otp?: string;
+      countryCode?: string;
     };
 
     const rawLogin = (body.login || body.email || body.phone || "").trim();
@@ -64,8 +66,11 @@ export async function POST(request: Request) {
     }
 
     const otpEnabled = process.env.NEXT_PUBLIC_PHONE_OTP === "true";
-    const { guest: guestRow, error: guestError } =
-      await findGuestByLogin(rawLogin);
+    const countryCode = emailLogin ? null : loginCountryCode(body.countryCode);
+    const { guest: guestRow, error: guestError } = await findGuestByLogin(
+      rawLogin,
+      countryCode
+    );
 
     if (guestError) {
       return json({ error: guestError }, 500);

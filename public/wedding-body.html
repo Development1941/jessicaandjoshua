@@ -22,25 +22,24 @@
                     Find Your Invitation
                 </label>
                 <p class="text-xs text-stone-500 mb-5 leading-relaxed">
-                    Enter your 10-digit cell phone number or invitation email to unlock your personalized schedule, dress code guide, local ETA map, and RSVP form.
+                    Choose your country code, then enter your cell number or invitation email.
                 </p>
                 
                 <div class="flex flex-col sm:flex-row gap-3 mb-3">
-                    <input type="text" id="guestSearchInput" placeholder="Phone or email, e.g. (713) 555-0101" 
-                           onkeypress="if(event.key==='Enter') performGuestLookup()"
-                           class="flex-grow px-4 py-3.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-brand-plum focus:outline-none transition text-sm bg-stone-50/50">
+                    <div class="flex flex-grow gap-2 min-w-0">
+                        <label for="countryCodeSelect" class="sr-only">Country code</label>
+                        <select id="countryCodeSelect" aria-label="Country code"
+                                class="shrink-0 px-3 py-3.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-brand-plum focus:outline-none transition text-sm bg-stone-50/50 text-stone-900">
+                            <option value="1">+1 US</option>
+                            <option value="44">+44 UK</option>
+                        </select>
+                        <input type="text" id="guestSearchInput" placeholder="Phone or email" 
+                               onkeypress="if(event.key==='Enter') performGuestLookup()"
+                               class="min-w-0 flex-grow px-4 py-3.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-brand-plum focus:outline-none transition text-sm bg-stone-50/50">
+                    </div>
                     <button onclick="performGuestLookup()" type="button" class="px-6 py-3.5 bg-brand-plum text-white font-bold rounded-xl hover:bg-brand-plumDark transition text-xs uppercase tracking-wider shrink-0 shadow-md">
                         Unlock Invite &rarr;
                     </button>
-                </div>
-
-                <div class="mt-4 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-500">
-                    <span class="font-semibold text-stone-700">Quick Test Views:</span>
-                    <div class="space-x-2">
-                        <button type="button" onclick="quickSearch('(713) 555-0101')" class="underline hover:text-brand-plum">(713) 555-0101 (Both)</button>
-                        <button type="button" onclick="quickSearch('grandma@example.com')" class="underline hover:text-brand-plum">grandma@example.com</button>
-                        <button type="button" onclick="quickSearch('(713) 555-0103')" class="underline hover:text-brand-plum">(713) 555-0103 (Night)</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -105,49 +104,58 @@
                 <div>
                     <p id="adminSignedIn" class="text-xs uppercase tracking-[0.2em] text-stone-500 font-semibold">Admin</p>
                     <h2 class="font-serif text-4xl sm:text-5xl text-stone-950 mt-2">RSVP responses</h2>
+                    <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="RSVP lists">
+                        <button type="button" id="adminShowReceived" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-plum text-white text-xs font-semibold tracking-wide" aria-pressed="true">Received <span id="adminReceivedTotal">0</span></button>
+                        <button type="button" id="adminShowPending" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-300 text-stone-700 text-xs font-semibold tracking-wide hover:border-brand-plum" aria-pressed="false">Pending <span id="adminPendingTotal">0</span></button>
+                    </div>
                     <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <p id="adminRsvpCount" class="text-sm text-stone-600">Loading responses...</p>
                         <button type="button" id="adminRsvpDownload" class="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-brand-plum text-white text-xs font-semibold tracking-wide hover:bg-brand-plumDark">Download CSV</button>
                     </div>
-                    <div class="mt-4 overflow-x-auto bg-white border border-stone-200 rounded-2xl shadow-sm">
-                        <table class="min-w-full text-left text-sm text-stone-800">
-                            <thead class="bg-stone-50 text-[10px] uppercase tracking-wider text-stone-500">
-                                <tr>
-                                    <th class="px-4 py-3 font-semibold">Family</th>
-                                    <th class="px-4 py-3 font-semibold">Guest</th>
-                                    <th class="px-4 py-3 font-semibold">Phone</th>
-                                    <th class="px-4 py-3 font-semibold">Email</th>
-                                    <th class="px-4 py-3 font-semibold">Invite</th>
-                                    <th class="px-4 py-3 font-semibold">Brunch</th>
-                                    <th class="px-4 py-3 font-semibold">Kids</th>
-                                    <th class="px-4 py-3 font-semibold">Bar</th>
-                                    <th class="px-4 py-3 font-semibold">Dietary</th>
-                                    <th class="px-4 py-3 font-semibold">Song</th>
-                                    <th class="px-4 py-3 font-semibold">Artist</th>
-                                    <th class="px-4 py-3 font-semibold">Updated</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminRsvpBody" class="divide-y divide-stone-100"></tbody>
-                        </table>
+                    <div class="mt-4 bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left text-sm text-stone-800">
+                                <thead id="adminRsvpHead" class="bg-stone-50 text-[10px] uppercase tracking-wider text-stone-500">
+                                    <tr>
+                                        <th class="sticky left-0 z-10 bg-stone-50 px-4 py-3 font-semibold">Family</th>
+                                        <th class="px-4 py-3 font-semibold">Guest</th>
+                                        <th class="px-4 py-3 font-semibold">Phone</th>
+                                        <th class="px-4 py-3 font-semibold">Email</th>
+                                        <th class="px-4 py-3 font-semibold">Invite</th>
+                                        <th class="px-4 py-3 font-semibold">Brunch</th>
+                                        <th class="px-4 py-3 font-semibold">Kids</th>
+                                        <th class="px-4 py-3 font-semibold">Bar</th>
+                                        <th class="px-4 py-3 font-semibold">Dietary</th>
+                                        <th class="px-4 py-3 font-semibold">Song</th>
+                                        <th class="px-4 py-3 font-semibold">Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminRsvpBody" class="divide-y divide-stone-100"></tbody>
+                            </table>
+                        </div>
+                        <div id="adminRsvpPager" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-stone-200 bg-stone-50/70 text-xs text-stone-600"></div>
                     </div>
                 </div>
 
                 <div>
                     <h2 class="font-serif text-4xl sm:text-5xl text-stone-950">Attendees</h2>
                     <p id="adminAttendeeCount" class="mt-4 text-sm text-stone-600">Loading the guest list...</p>
-                    <div class="mt-4 overflow-x-auto bg-white border border-stone-200 rounded-2xl shadow-sm">
-                        <table class="min-w-full text-left text-sm text-stone-800">
-                            <thead class="bg-stone-50 text-[10px] uppercase tracking-wider text-stone-500">
-                                <tr>
-                                    <th class="px-4 py-3 font-semibold">Family</th>
-                                    <th class="px-4 py-3 font-semibold">Guest</th>
-                                    <th class="px-4 py-3 font-semibold">Phone</th>
-                                    <th class="px-4 py-3 font-semibold">Email</th>
-                                    <th class="px-4 py-3 font-semibold">Invite</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminAttendeeBody" class="divide-y divide-stone-100"></tbody>
-                        </table>
+                    <div class="mt-4 bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left text-sm text-stone-800">
+                                <thead class="bg-stone-50 text-[10px] uppercase tracking-wider text-stone-500">
+                                    <tr>
+                                        <th class="sticky left-0 z-10 bg-stone-50 px-4 py-3 font-semibold">Family</th>
+                                        <th class="px-4 py-3 font-semibold">Guest</th>
+                                        <th class="px-4 py-3 font-semibold">Phone</th>
+                                        <th class="px-4 py-3 font-semibold">Email</th>
+                                        <th class="px-4 py-3 font-semibold">Invite</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminAttendeeBody" class="divide-y divide-stone-100"></tbody>
+                            </table>
+                        </div>
+                        <div id="adminAttendeePager" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-stone-200 bg-stone-50/70 text-xs text-stone-600"></div>
                     </div>
                 </div>
             </div>
