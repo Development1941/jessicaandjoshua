@@ -149,6 +149,12 @@ export function initWeddingSite() {
   let activeAudioPreview: HTMLAudioElement | null = null;
   let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
+  function setAdminView(isAdmin: boolean) {
+    document.body.classList.toggle("admin-view", isAdmin);
+    document.getElementById("adminDashboard")?.classList.toggle("hidden", !isAdmin);
+    if (!isAdmin) document.getElementById("mobileMenu")?.classList.add("hidden");
+  }
+
   function showPage(pageName: string) {
     const landing = document.getElementById("pageLanding");
     const invitation = document.getElementById("pageInvitation");
@@ -161,12 +167,12 @@ export function initWeddingSite() {
     } else {
       invitation.classList.add("hidden");
       landing.classList.remove("hidden");
+      setAdminView(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       void fetch("/api/auth/login", { method: "DELETE" });
       document
         .getElementById("rsvpAlreadyFilledBanner")
         ?.classList.add("hidden");
-      document.getElementById("adminRsvpDownload")?.classList.add("hidden");
       const submitBtn = document.querySelector(
         '#rsvpForm button[type="submit"]'
       ) as HTMLButtonElement | null;
@@ -304,14 +310,135 @@ export function initWeddingSite() {
           "We are so excited to celebrate with you across both events of our wedding day!";
     }
 
-    const downloadBtn = document.getElementById("adminRsvpDownload");
-    if (downloadBtn) {
-      const phone = "phone" in guestObj ? guestObj.phone : "";
-      downloadBtn.classList.toggle("hidden", !isAdminPhone(phone));
+    const phone = "phone" in guestObj ? guestObj.phone : "";
+    const admin = isAdminPhone(phone);
+    setAdminView(admin);
+    const signedIn = document.getElementById("adminSignedIn");
+    if (signedIn) {
+      signedIn.textContent = admin
+        ? `Signed in as ${guestName || "Joshua"}`
+        : "Admin";
     }
 
     showPage("invitation");
+    if (admin) {
+      void loadAdminDashboard();
+      return;
+    }
     void loadExistingRsvp(guestObj.id ? guestObj : null);
+  }
+
+  function escapeHtml(value: unknown): string {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function tableCell(value: unknown): string {
+    const text = value == null || String(value).trim() === "" ? "—" : String(value);
+    return `<td class="px-4 py-3 align-top whitespace-nowrap">${escapeHtml(text)}</td>`;
+  }
+
+  function answerLabel(value: string): string {
+    if (value === "yes") return "Yes";
+    if (value === "no") return "No";
+    return value;
+  }
+
+  function shortWhen(value: string): string {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  async function loadAdminDashboard() {
+    const rsvpBody = document.getElementById("adminRsvpBody");
+    const attendeeBody = document.getElementById("adminAttendeeBody");
+    const rsvpCount = document.getElementById("adminRsvpCount");
+    const attendeeCount = document.getElementById("adminAttendeeCount");
+    if (rsvpCount) rsvpCount.textContent = "Loading responses...";
+    if (attendeeCount) attendeeCount.textContent = "Loading the guest list...";
+
+    try {
+      const res = await fetch("/api/admin/dashboard");
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        rsvps?: Array<{
+          family: string;
+          guest: string;
+          phone: string;
+          email: string;
+          invite: string;
+          brunchAttending: string;
+          brunchKids: string;
+          barAttending: string;
+          dietary: string;
+          song: string;
+          artist: string;
+          updated: string;
+        }>;
+        attendees?: Array<{
+          family: string;
+          guest: string;
+          phone: string;
+          email: string;
+          invite: string;
+        }>;
+      };
+      if (!res.ok) {
+        showToast("error", data.error || "Could not load admin data.");
+        if (rsvpCount) rsvpCount.textContent = "Could not load responses.";
+        if (attendeeCount) attendeeCount.textContent = "Could not load the guest list.";
+        return;
+      }
+
+      const rsvps = data.rsvps || [];
+      const attendees = data.attendees || [];
+      if (rsvpCount) {
+        rsvpCount.textContent =
+          rsvps.length === 1 ? "1 response" : `${rsvps.length} responses`;
+      }
+      if (attendeeCount) {
+        attendeeCount.textContent =
+          attendees.length === 1
+            ? "1 household on the guest list"
+            : `${attendees.length} households on the guest list`;
+      }
+      if (rsvpBody) {
+        rsvpBody.innerHTML = rsvps.length
+          ? rsvps
+              .map(
+                (row) =>
+                  `<tr>${tableCell(row.family)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}${tableCell(answerLabel(row.brunchAttending))}${tableCell(row.brunchKids)}${tableCell(answerLabel(row.barAttending))}${tableCell(row.dietary)}${tableCell(row.song)}${tableCell(row.artist)}${tableCell(shortWhen(row.updated))}</tr>`
+              )
+              .join("")
+          : `<tr><td class="px-4 py-6 text-stone-500" colspan="12">No RSVP responses yet.</td></tr>`;
+      }
+      if (attendeeBody) {
+        attendeeBody.innerHTML = attendees.length
+          ? attendees
+              .map(
+                (row) =>
+                  `<tr>${tableCell(row.family)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}</tr>`
+              )
+              .join("")
+          : `<tr><td class="px-4 py-6 text-stone-500" colspan="5">No guests on the list.</td></tr>`;
+      }
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Could not load admin data."
+      );
+    }
   }
 
   async function downloadRsvpCsv() {
