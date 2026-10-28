@@ -1,4 +1,5 @@
 import { toast, type Id } from "react-toastify";
+import { isAdminPhone } from "@/lib/admin";
 
 type Guest = {
   id: string;
@@ -165,6 +166,7 @@ export function initWeddingSite() {
       document
         .getElementById("rsvpAlreadyFilledBanner")
         ?.classList.add("hidden");
+      document.getElementById("adminRsvpDownload")?.classList.add("hidden");
       const submitBtn = document.querySelector(
         '#rsvpForm button[type="submit"]'
       ) as HTMLButtonElement | null;
@@ -302,8 +304,51 @@ export function initWeddingSite() {
           "We are so excited to celebrate with you across both events of our wedding day!";
     }
 
+    const downloadBtn = document.getElementById("adminRsvpDownload");
+    if (downloadBtn) {
+      const phone = "phone" in guestObj ? guestObj.phone : "";
+      downloadBtn.classList.toggle("hidden", !isAdminPhone(phone));
+    }
+
     showPage("invitation");
     void loadExistingRsvp(guestObj.id ? guestObj : null);
+  }
+
+  async function downloadRsvpCsv() {
+    const downloadToast = toast.loading("Preparing the RSVP spreadsheet...", {
+      position: "bottom-right",
+    });
+    try {
+      const res = await fetch("/api/admin/rsvps");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        showToast(
+          "error",
+          data.error || "Could not download RSVP responses.",
+          downloadToast
+        );
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const match = /filename="?([^";]+)"?/i.exec(
+        res.headers.get("Content-Disposition") || ""
+      );
+      link.href = url;
+      link.download = match?.[1] || "wedding-rsvps.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("success", "RSVP spreadsheet downloaded.", downloadToast);
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Could not download RSVP responses.",
+        downloadToast
+      );
+    }
   }
 
   function fillRsvpForm(rsvp: RsvpRecord, guest?: Guest | null) {
@@ -783,6 +828,11 @@ export function initWeddingSite() {
       });
   };
   rsvpForm?.addEventListener("submit", submitHandler);
+  const adminDownloadBtn = document.getElementById("adminRsvpDownload");
+  const adminDownloadHandler = () => {
+    void downloadRsvpCsv();
+  };
+  adminDownloadBtn?.addEventListener("click", adminDownloadHandler);
 
   fetch("/api/auth/login")
     .then((res) => res.json())
@@ -808,5 +858,6 @@ export function initWeddingSite() {
     songSearchInput?.removeEventListener("input", songInputHandler);
     document.removeEventListener("click", outsideClick);
     rsvpForm?.removeEventListener("submit", submitHandler);
+    adminDownloadBtn?.removeEventListener("click", adminDownloadHandler);
   };
 }
