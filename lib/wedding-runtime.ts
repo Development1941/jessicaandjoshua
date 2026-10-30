@@ -261,10 +261,10 @@ export function initWeddingSite() {
         greetingName.innerText = `Welcome, ${guestName || "Guest"}! 🍷`;
       if (greetingDetail)
         greetingDetail.innerText =
-          "You are warmly invited to Our Family & Friends Tapas Brunch.";
+          "You are warmly invited to The Newlywed Brunch.";
       if (scheduleDesc)
         scheduleDesc.innerText =
-          "Here are the details for our morning Tapas Brunch at Barcelona Wine Bar.";
+          "Here are the details for our morning The Newlywed Brunch at Barcelona Wine Bar.";
     } else if (tier === "night") {
       eventCardBrunch?.classList.add("hidden");
       eventCardNight?.classList.remove("hidden");
@@ -282,10 +282,10 @@ export function initWeddingSite() {
         greetingName.innerText = `Welcome, ${guestName || "Guest"}! 🍸`;
       if (greetingDetail)
         greetingDetail.innerText =
-          "You are warmly invited to Creative Black Tie @ Donna's on White Oak.";
+          "You are warmly invited to The Wedding Encore @ Donna's on White Oak.";
       if (scheduleDesc)
         scheduleDesc.innerText =
-          "Here are the details for our Creative Black Tie night out at Donna's.";
+          "Here are the details for our The Wedding Encore night out at Donna's.";
     } else {
       eventCardBrunch?.classList.remove("hidden");
       eventCardNight?.classList.remove("hidden");
@@ -300,10 +300,10 @@ export function initWeddingSite() {
         dresscodeSubtitle.innerText =
           "Below are attire guidelines for both events.";
       if (greetingName)
-        greetingName.innerText = `Welcome, ${guestName || "Guest"}! ✨`;
+        greetingName.innerText = `Welcome, ${guestName || "Guest"}!`;
       if (greetingDetail)
         greetingDetail.innerText =
-          "You are invited to Brunch at 11 AM and Creative Black Tie at 8 PM.";
+          "You are invited to Brunch at 11 AM and The Wedding Encore at 8 PM.";
       if (scheduleDesc)
         scheduleDesc.innerText =
           "We are so excited to celebrate with you across both events of our wedding day!";
