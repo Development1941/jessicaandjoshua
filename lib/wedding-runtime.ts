@@ -103,12 +103,20 @@ function setPlusOneVisible(visible: boolean, options?: { preserveValue?: boolean
   if (visible) {
     panel.hidden = false;
     panel.classList.remove("hidden");
-    if (toggle) toggle.textContent = "Remove +1";
+    if (toggle) {
+      toggle.textContent = "Remove +1";
+      toggle.classList.add("bg-brand-plum", "text-white", "border-brand-plum");
+      toggle.classList.remove("bg-white", "text-brand-plum");
+    }
     window.setTimeout(() => plusOneInput?.focus(), 40);
   } else {
     panel.hidden = true;
     panel.classList.add("hidden");
-    if (toggle) toggle.textContent = "Add +1";
+    if (toggle) {
+      toggle.textContent = "Add +1";
+      toggle.classList.remove("bg-brand-plum", "text-white", "border-brand-plum");
+      toggle.classList.add("bg-white", "text-brand-plum");
+    }
     if (plusOneInput && !options?.preserveValue) plusOneInput.value = "";
   }
 }
