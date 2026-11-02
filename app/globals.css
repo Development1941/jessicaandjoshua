@@ -40,15 +40,16 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-#rsvpPlusOnePanel.is-open {
-  display: block !important;
-  animation: fadeIn 0.28s ease-out forwards;
+.rsvp-plus-one > summary {
+  list-style: none;
 }
 
-#rsvpPlusOneToggle[aria-expanded="true"] {
-  border-color: #542344;
-  color: #542344;
-  background: rgba(84, 35, 68, 0.06);
+.rsvp-plus-one > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rsvp-plus-one[open] > summary span[aria-hidden="true"] {
+  transform: rotate(45deg);
 }
 
 body.admin-view .guest-only {

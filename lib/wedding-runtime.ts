@@ -86,48 +86,38 @@ function splitGuestNames(value: string | null | undefined) {
 }
 
 function setPlusOneVisible(visible: boolean, options?: { preserveValue?: boolean }) {
-  const panel = document.getElementById("rsvpPlusOnePanel");
-  const toggle = document.getElementById(
-    "rsvpPlusOneToggle"
-  ) as HTMLButtonElement | null;
-  const toggleIcon = document.getElementById("rsvpPlusOneToggleIcon");
-  const toggleLabel = document.getElementById("rsvpPlusOneToggleLabel");
+  const details = document.getElementById(
+    "rsvpPlusOneDetails"
+  ) as HTMLDetailsElement | null;
   const plusOneInput = document.getElementById(
     "rsvpPlusOneInput"
   ) as HTMLInputElement | null;
 
-  if (!panel) return;
+  if (!details) return;
 
+  details.open = visible;
+  if (!visible && plusOneInput && !options?.preserveValue) {
+    plusOneInput.value = "";
+  }
   if (visible) {
-    panel.classList.remove("hidden");
-    panel.classList.add("is-open");
-    panel.style.display = "block";
-    panel.style.maxHeight = "280px";
-    panel.style.opacity = "1";
-    if (toggle) toggle.setAttribute("aria-expanded", "true");
-    if (toggleIcon) toggleIcon.textContent = "−";
-    if (toggleLabel) toggleLabel.textContent = "Hide +1";
     window.setTimeout(() => plusOneInput?.focus(), 40);
-  } else {
-    panel.classList.add("hidden");
-    panel.classList.remove("is-open");
-    panel.style.display = "none";
-    panel.style.maxHeight = "";
-    panel.style.opacity = "";
-    if (toggle) toggle.setAttribute("aria-expanded", "false");
-    if (toggleIcon) toggleIcon.textContent = "+";
-    if (toggleLabel) toggleLabel.textContent = "Add +1";
-    if (plusOneInput && !options?.preserveValue) plusOneInput.value = "";
   }
 }
 
 function toggleRsvpPlusOne() {
-  const panel = document.getElementById("rsvpPlusOnePanel");
-  const isHidden =
-    !panel ||
-    panel.classList.contains("hidden") ||
-    panel.style.display === "none";
-  setPlusOneVisible(isHidden, { preserveValue: true });
+  const details = document.getElementById(
+    "rsvpPlusOneDetails"
+  ) as HTMLDetailsElement | null;
+  setPlusOneVisible(!details?.open, { preserveValue: true });
+}
+
+function removeRsvpPlusOne() {
+  setPlusOneVisible(false);
+}
+
+if (typeof window !== "undefined") {
+  window.toggleRsvpPlusOne = toggleRsvpPlusOne;
+  window.removeRsvpPlusOne = removeRsvpPlusOne;
 }
 
 function fillGuestNameFields(guest: Guest) {
@@ -1073,7 +1063,7 @@ export function initWeddingSite() {
   window.playPreview = playPreview;
   window.clearSelectedSong = clearSelectedSong;
   window.toggleRsvpPlusOne = toggleRsvpPlusOne;
-  window.removeRsvpPlusOne = () => setPlusOneVisible(false);
+  window.removeRsvpPlusOne = removeRsvpPlusOne;
 
   countdownTimer = setInterval(updateCountdown, 1000);
   updateCountdown();
@@ -1146,22 +1136,8 @@ export function initWeddingSite() {
   };
   document.addEventListener("click", outsideClick);
 
-  const plusOneToggle = document.getElementById("rsvpPlusOneToggle");
-  const plusOneRemove = document.getElementById("rsvpPlusOneRemove");
-  const plusOneToggleHandler = (event?: Event) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-    toggleRsvpPlusOne();
-  };
-  const plusOneRemoveHandler = (event?: Event) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-    setPlusOneVisible(false);
-  };
-  plusOneToggle?.addEventListener("click", plusOneToggleHandler);
-  plusOneRemove?.addEventListener("click", plusOneRemoveHandler);
   window.toggleRsvpPlusOne = toggleRsvpPlusOne;
-  window.removeRsvpPlusOne = () => setPlusOneVisible(false);
+  window.removeRsvpPlusOne = removeRsvpPlusOne;
 
   const rsvpForm = document.getElementById("rsvpForm") as HTMLFormElement | null;
   const submitHandler = (e: Event) => {
@@ -1173,10 +1149,10 @@ export function initWeddingSite() {
       (
         document.getElementById("rsvpFullNameInput") as HTMLInputElement | null
       )?.value.trim() || "";
-    const plusOneVisible = !document
-      .getElementById("rsvpPlusOnePanel")
-      ?.classList.contains("hidden");
-    const plusOneName = plusOneVisible
+    const plusOneDetails = document.getElementById(
+      "rsvpPlusOneDetails"
+    ) as HTMLDetailsElement | null;
+    const plusOneName = plusOneDetails?.open
       ? (
           document.getElementById("rsvpPlusOneInput") as HTMLInputElement | null
         )?.value.trim() || ""
@@ -1361,8 +1337,6 @@ export function initWeddingSite() {
     songSearchInput?.removeEventListener("input", songInputHandler);
     document.removeEventListener("click", outsideClick);
     rsvpForm?.removeEventListener("submit", submitHandler);
-    plusOneToggle?.removeEventListener("click", plusOneToggleHandler);
-    plusOneRemove?.removeEventListener("click", plusOneRemoveHandler);
     adminDownloadBtn?.removeEventListener("click", adminDownloadHandler);
     adminShowReceived?.removeEventListener("click", showReceivedHandler);
     adminShowPending?.removeEventListener("click", showPendingHandler);
