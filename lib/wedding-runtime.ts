@@ -16,6 +16,7 @@ type RsvpRecord = {
   guest_first_name?: string | null;
   guest_last_name?: string | null;
   guest_names?: string | null;
+  plus_one_name?: string | null;
   brunch_attending?: string | null;
   brunch_kids?: string | null;
   bar_attending?: string | null;
@@ -69,18 +70,60 @@ function guestLabel(guest: {
   return (guest.name || "").trim() || "Guest";
 }
 
-function fillGuestNameFields(guest: Guest) {
-  const firstInput = document.getElementById(
-    "rsvpFirstNameInput"
+function splitGuestNames(value: string | null | undefined) {
+  const raw = (value || "").trim();
+  if (!raw) return { fullName: "", plusOneName: "" };
+  const parts = raw.split(/\s\+\s/);
+  if (parts.length >= 2) {
+    return {
+      fullName: parts[0].trim(),
+      plusOneName: parts.slice(1).join(" + ").trim(),
+    };
+  }
+  return { fullName: raw, plusOneName: "" };
+}
+
+function setPlusOneVisible(visible: boolean, options?: { preserveValue?: boolean }) {
+  const panel = document.getElementById("rsvpPlusOnePanel");
+  const toggle = document.getElementById(
+    "rsvpPlusOneToggle"
+  ) as HTMLButtonElement | null;
+  const toggleIcon = document.getElementById("rsvpPlusOneToggleIcon");
+  const toggleLabel = document.getElementById("rsvpPlusOneToggleLabel");
+  const plusOneInput = document.getElementById(
+    "rsvpPlusOneInput"
   ) as HTMLInputElement | null;
-  const lastInput = document.getElementById(
-    "rsvpLastNameInput"
+
+  if (visible) {
+    panel?.classList.remove("hidden");
+    panel?.classList.add("is-open");
+    if (toggle) toggle.setAttribute("aria-expanded", "true");
+    if (toggleIcon) toggleIcon.textContent = "−";
+    if (toggleLabel) toggleLabel.textContent = "Hide +1";
+    window.setTimeout(() => plusOneInput?.focus(), 40);
+  } else {
+    panel?.classList.add("hidden");
+    panel?.classList.remove("is-open");
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
+    if (toggleIcon) toggleIcon.textContent = "+";
+    if (toggleLabel) toggleLabel.textContent = "Add +1";
+    if (plusOneInput && !options?.preserveValue) plusOneInput.value = "";
+  }
+}
+
+function fillGuestNameFields(guest: Guest) {
+  const fullNameInput = document.getElementById(
+    "rsvpFullNameInput"
   ) as HTMLInputElement | null;
   const addresseeWrap = document.getElementById("rsvpAddresseeWrap");
   const addresseeDisplay = document.getElementById("rsvpAddresseeDisplay");
 
-  if (firstInput) firstInput.value = guest.first_name || "";
-  if (lastInput) lastInput.value = guest.last_name || "";
+  const personal =
+    `${guest.first_name || ""} ${guest.last_name || ""}`.trim() ||
+    (guest.name || "").trim();
+  if (fullNameInput && !fullNameInput.value) {
+    fullNameInput.value = personal;
+  }
 
   const addressee = (guest.addressee || "").trim();
   if (addressee && addresseeDisplay && addresseeWrap) {
@@ -168,6 +211,15 @@ export function initWeddingSite() {
       landing.classList.remove("hidden");
       setAdminView(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      pendingLogin = "";
+      pendingPhone = "";
+      const searchInput = document.getElementById(
+        "guestSearchInput"
+      ) as HTMLInputElement | null;
+      if (searchInput) {
+        searchInput.value = "";
+        searchInput.placeholder = "Phone or email";
+      }
       void fetch("/api/auth/login", { method: "DELETE" });
       document
         .getElementById("rsvpAlreadyFilledBanner")
@@ -344,6 +396,7 @@ export function initWeddingSite() {
     invite: string;
   };
   type AdminResponse = AdminPerson & {
+    plusOne?: string;
     brunchAttending: string;
     brunchKids: string;
     barAttending: string;
@@ -488,6 +541,7 @@ export function initWeddingSite() {
       head.innerHTML = `<tr>
         <th class="sticky left-0 z-10 bg-stone-50 px-4 py-3 font-semibold">Family</th>
         <th class="px-4 py-3 font-semibold">Guest</th>
+        <th class="px-4 py-3 font-semibold">+1</th>
         <th class="px-4 py-3 font-semibold">Phone</th>
         <th class="px-4 py-3 font-semibold">Email</th>
         <th class="px-4 py-3 font-semibold">Invite</th>
@@ -509,10 +563,10 @@ export function initWeddingSite() {
         ? rows
             .map((row) => {
               const song = [row.song, row.artist].filter(Boolean).join(" — ");
-              return `<tr>${tableCell(row.family, true)}${tableCell(row.guest)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}${tableCell(answerLabel(row.brunchAttending))}${tableCell(row.brunchKids)}${tableCell(answerLabel(row.barAttending))}${tableCell(row.dietary)}${tableCell(song)}${tableCell(shortWhen(row.updated))}</tr>`;
+              return `<tr>${tableCell(row.family, true)}${tableCell(row.guest)}${tableCell(row.plusOne)}${tableCell(row.phone)}${tableCell(row.email)}${tableCell(row.invite)}${tableCell(answerLabel(row.brunchAttending))}${tableCell(row.brunchKids)}${tableCell(answerLabel(row.barAttending))}${tableCell(row.dietary)}${tableCell(song)}${tableCell(shortWhen(row.updated))}</tr>`;
             })
             .join("")
-        : `<tr><td class="px-4 py-6 text-stone-500" colspan="11">No RSVP responses yet.</td></tr>`;
+        : `<tr><td class="px-4 py-6 text-stone-500" colspan="12">No RSVP responses yet.</td></tr>`;
     }
     renderPager(
       document.getElementById("adminRsvpPager"),
@@ -627,33 +681,32 @@ export function initWeddingSite() {
   }
 
   function fillRsvpForm(rsvp: RsvpRecord, guest?: Guest | null) {
-    const firstInput = document.getElementById(
-      "rsvpFirstNameInput"
+    const fullNameInput = document.getElementById(
+      "rsvpFullNameInput"
     ) as HTMLInputElement | null;
-    const lastInput = document.getElementById(
-      "rsvpLastNameInput"
+    const plusOneInput = document.getElementById(
+      "rsvpPlusOneInput"
     ) as HTMLInputElement | null;
+    const parsed = splitGuestNames(rsvp.guest_names);
+    const plusOneName = (rsvp.plus_one_name || parsed.plusOneName || "").trim();
+    const fallbackName =
+      `${rsvp.guest_first_name || guest?.first_name || ""} ${
+        rsvp.guest_last_name || guest?.last_name || ""
+      }`.trim() ||
+      guest?.name ||
+      "";
 
-    if (firstInput) {
-      firstInput.value =
-        rsvp.guest_first_name ||
-        guest?.first_name ||
-        (rsvp.guest_names || "").split(" ")[0] ||
-        "";
+    if (fullNameInput) {
+      fullNameInput.value = parsed.fullName || fallbackName;
     }
-    if (lastInput) {
-      lastInput.value =
-        rsvp.guest_last_name ||
-        guest?.last_name ||
-        (rsvp.guest_names || "").split(" ").slice(1).join(" ") ||
-        "";
+    if (plusOneName) {
+      setPlusOneVisible(true, { preserveValue: true });
+      if (plusOneInput) plusOneInput.value = plusOneName;
+    } else {
+      setPlusOneVisible(false);
     }
 
-    if (guest) fillGuestNameFields({
-      ...guest,
-      first_name: firstInput?.value || guest.first_name,
-      last_name: lastInput?.value || guest.last_name,
-    });
+    if (guest) fillGuestNameFields(guest);
 
     setRadioValue("brunchAttending", rsvp.brunch_attending || undefined);
     setRadioValue("barAttending", rsvp.bar_attending || undefined);
@@ -1072,19 +1125,39 @@ export function initWeddingSite() {
   };
   document.addEventListener("click", outsideClick);
 
+  const plusOneToggle = document.getElementById("rsvpPlusOneToggle");
+  const plusOneRemove = document.getElementById("rsvpPlusOneRemove");
+  const plusOneToggleHandler = () => {
+    const panel = document.getElementById("rsvpPlusOnePanel");
+    const isHidden = panel?.classList.contains("hidden") ?? true;
+    setPlusOneVisible(isHidden, { preserveValue: true });
+  };
+  const plusOneRemoveHandler = () => setPlusOneVisible(false);
+  plusOneToggle?.addEventListener("click", plusOneToggleHandler);
+  plusOneRemove?.addEventListener("click", plusOneRemoveHandler);
+
   const rsvpForm = document.getElementById("rsvpForm") as HTMLFormElement | null;
   const submitHandler = (e: Event) => {
     e.preventDefault();
     if (!rsvpForm) return;
     rsvpForm.classList.add("opacity-50", "pointer-events-none");
 
-    const guestFirstName =
-      (document.getElementById("rsvpFirstNameInput") as HTMLInputElement)
-        ?.value || "";
+    const guestNames =
+      (
+        document.getElementById("rsvpFullNameInput") as HTMLInputElement | null
+      )?.value.trim() || "";
+    const plusOneVisible = !document
+      .getElementById("rsvpPlusOnePanel")
+      ?.classList.contains("hidden");
+    const plusOneName = plusOneVisible
+      ? (
+          document.getElementById("rsvpPlusOneInput") as HTMLInputElement | null
+        )?.value.trim() || ""
+      : "";
+    const nameParts = guestNames.split(/\s+/).filter(Boolean);
+    const guestFirstName = nameParts[0] || "";
     const guestLastName =
-      (document.getElementById("rsvpLastNameInput") as HTMLInputElement)
-        ?.value || "";
-    const guestNames = `${guestFirstName} ${guestLastName}`.trim();
+      nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
     const guestPhone =
       (document.getElementById("guestSearchInput") as HTMLInputElement)
         ?.value || pendingPhone;
@@ -1133,6 +1206,7 @@ export function initWeddingSite() {
       guestFirstName,
       guestLastName,
       guestNames,
+      plusOneName,
       guestPhone,
       brunchAttending,
       brunchKids,
@@ -1247,22 +1321,10 @@ export function initWeddingSite() {
   countryCodeButton?.addEventListener("click", countryButtonHandler);
   countryMenu?.addEventListener("click", countryOptionHandler);
   syncCountryCodeField();
-
-  fetch("/api/auth/login")
-    .then((res) => res.json())
-    .then((data: { guest?: Guest | null }) => {
-      if (data.guest) {
-        pendingPhone = data.guest.phone || "";
-        pendingLogin = data.guest.email || data.guest.phone || "";
-        const input = document.getElementById(
-          "guestSearchInput"
-        ) as HTMLInputElement | null;
-        if (input && !input.value) {
-          input.value = data.guest.email || data.guest.phone || "";
-        }
-      }
-    })
-    .catch(() => undefined);
+  if (guestSearchInput instanceof HTMLInputElement) {
+    guestSearchInput.value = "";
+    guestSearchInput.autocomplete = "off";
+  }
 
   return () => {
     if (countdownTimer) clearInterval(countdownTimer);
@@ -1272,6 +1334,8 @@ export function initWeddingSite() {
     songSearchInput?.removeEventListener("input", songInputHandler);
     document.removeEventListener("click", outsideClick);
     rsvpForm?.removeEventListener("submit", submitHandler);
+    plusOneToggle?.removeEventListener("click", plusOneToggleHandler);
+    plusOneRemove?.removeEventListener("click", plusOneRemoveHandler);
     adminDownloadBtn?.removeEventListener("click", adminDownloadHandler);
     adminShowReceived?.removeEventListener("click", showReceivedHandler);
     adminShowPending?.removeEventListener("click", showPendingHandler);

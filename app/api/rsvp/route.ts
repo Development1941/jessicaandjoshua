@@ -16,6 +16,7 @@ export async function POST(request: Request) {
       guestFirstName?: string;
       guestLastName?: string;
       guestNames?: string;
+      plusOneName?: string;
       guestPhone?: string;
       brunchAttending?: string;
       brunchKids?: string;
@@ -73,26 +74,31 @@ export async function POST(request: Request) {
     }
 
     const guestPhone = normalizePhone(guest.phone || "") || guest.id;
-    const firstName =
-      (body.guestFirstName || guest.first_name || session?.first_name || "").trim();
-    const lastName =
-      (body.guestLastName || guest.last_name || session?.last_name || "").trim();
-    const fullName =
-      `${firstName} ${lastName}`.trim() ||
+    const primaryName = (
       body.guestNames ||
+      `${body.guestFirstName || ""} ${body.guestLastName || ""}`.trim() ||
       guestPersonalName(guest) ||
       session?.name ||
-      "";
+      ""
+    ).trim();
+    const plusOneName = (body.plusOneName || "").trim();
 
-    if (!firstName || !lastName) {
+    if (!primaryName) {
       return NextResponse.json(
         {
           warning: true,
-          error: "First name and last name are required.",
+          error: "Full name is required.",
         },
         { status: 400 }
       );
     }
+
+    const nameParts = primaryName.split(/\s+/).filter(Boolean);
+    const firstName =
+      (body.guestFirstName || "").trim() || nameParts[0] || primaryName;
+    const lastName =
+      (body.guestLastName || "").trim() ||
+      (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "");
 
     const admin = getSupabaseAdmin();
     const payload = {
@@ -100,7 +106,8 @@ export async function POST(request: Request) {
       guest_phone: guestPhone,
       guest_first_name: firstName,
       guest_last_name: lastName,
-      guest_names: fullName,
+      guest_names: primaryName,
+      plus_one_name: plusOneName,
       brunch_attending: body.brunchAttending || null,
       brunch_kids: body.brunchKids || "0",
       bar_attending: body.barAttending || null,
@@ -110,25 +117,42 @@ export async function POST(request: Request) {
       spotify_url: body.spotifyUrl || "",
     };
 
-    const { data, error } = await admin
-      .from("rsvps")
-      .upsert(payload, { onConflict: "guest_phone" })
-      .select("id, updated_at")
-      .single();
+    const upsertRsvp = async (row: Record<string, unknown>) =>
+      admin
+        .from("rsvps")
+        .upsert(row, { onConflict: "guest_phone" })
+        .select("id, updated_at")
+        .single();
+
+    let { data, error } = await upsertRsvp(payload);
+
+    if (error && /plus_one_name/i.test(error.message)) {
+      const { plus_one_name: _plusOne, ...withoutPlusOne } = payload;
+      const legacyNames = plusOneName
+        ? `${primaryName} + ${plusOneName}`
+        : primaryName;
+      ({ data, error } = await upsertRsvp({
+        ...withoutPlusOne,
+        guest_names: legacyNames,
+      }));
+    }
+
+    if (error && /guest_first_name|guest_last_name/i.test(error.message)) {
+      const {
+        guest_first_name: _f,
+        guest_last_name: _l,
+        plus_one_name: _p,
+        ...legacy
+      } = payload;
+      ({ data, error } = await upsertRsvp({
+        ...legacy,
+        guest_names: plusOneName
+          ? `${primaryName} + ${plusOneName}`
+          : primaryName,
+      }));
+    }
 
     if (error) {
-      if (/guest_first_name|guest_last_name/i.test(error.message)) {
-        const { guest_first_name: _f, guest_last_name: _l, ...legacy } = payload;
-        const retry = await admin
-          .from("rsvps")
-          .upsert(legacy, { onConflict: "guest_phone" })
-          .select("id, updated_at")
-          .single();
-        if (retry.error) {
-          return NextResponse.json({ error: retry.error.message }, { status: 500 });
-        }
-        return NextResponse.json({ ok: true, rsvp: retry.data });
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

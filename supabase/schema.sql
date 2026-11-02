@@ -34,6 +34,7 @@ create table if not exists public.rsvps (
   guest_first_name text not null default '',
   guest_last_name text not null default '',
   guest_names text not null default '',
+  plus_one_name text not null default '',
   brunch_attending text,
   brunch_kids text default '0',
   bar_attending text,

@@ -8,6 +8,7 @@ export type AdminRsvp = {
   guest: string;
   firstName: string;
   lastName: string;
+  plusOne: string;
   phone: string;
   email: string;
   invite: string;
@@ -38,6 +39,7 @@ type RsvpRow = {
   guest_first_name: string | null;
   guest_last_name: string | null;
   guest_names: string | null;
+  plus_one_name?: string | null;
   brunch_attending: string | null;
   brunch_kids: string | null;
   bar_attending: string | null;
@@ -102,12 +104,21 @@ export async function loadAdminRecords(): Promise<{
   pending: AdminPending[];
 }> {
   const admin = getSupabaseAdmin();
-  const { data: rsvpRows, error: rsvpError } = await admin
+  const rsvpSelectWithPlusOne =
+    "guest_id, guest_phone, guest_first_name, guest_last_name, guest_names, plus_one_name, brunch_attending, brunch_kids, bar_attending, dietary, jukebox_track, jukebox_artist, spotify_url, created_at, updated_at";
+  const rsvpSelectLegacy =
+    "guest_id, guest_phone, guest_first_name, guest_last_name, guest_names, brunch_attending, brunch_kids, bar_attending, dietary, jukebox_track, jukebox_artist, spotify_url, created_at, updated_at";
+  let rsvpResult = await admin
     .from("rsvps")
-    .select(
-      "guest_id, guest_phone, guest_first_name, guest_last_name, guest_names, brunch_attending, brunch_kids, bar_attending, dietary, jukebox_track, jukebox_artist, spotify_url, created_at, updated_at"
-    )
+    .select(rsvpSelectWithPlusOne)
     .order("updated_at", { ascending: false });
+  if (rsvpResult.error && /plus_one_name/i.test(rsvpResult.error.message)) {
+    rsvpResult = await admin
+      .from("rsvps")
+      .select(rsvpSelectLegacy)
+      .order("updated_at", { ascending: false });
+  }
+  const { data: rsvpRows, error: rsvpError } = rsvpResult;
 
   if (rsvpError) throw new Error(rsvpError.message);
 
@@ -142,11 +153,20 @@ export async function loadAdminRecords(): Promise<{
     if (row.guest_id) respondedIds.add(row.guest_id);
     if (row.guest_phone) respondedPhones.add(row.guest_phone);
     if (guest?.phone) respondedPhones.add(guest.phone);
+    const legacyPlusOne =
+      !row.plus_one_name && row.guest_names?.includes(" + ")
+        ? row.guest_names.split(" + ").slice(1).join(" + ").trim()
+        : "";
+    const guestName =
+      row.plus_one_name && row.guest_names?.includes(" + ")
+        ? row.guest_names.split(" + ")[0].trim()
+        : row.guest_names || (guest ? guestLabel(guest) : "");
     return {
       family: guest?.addressee || "",
-      guest: row.guest_names || (guest ? guestLabel(guest) : ""),
+      guest: guestName,
       firstName: row.guest_first_name || "",
       lastName: row.guest_last_name || "",
+      plusOne: (row.plus_one_name || legacyPlusOne || "").trim(),
       phone: row.guest_phone || guest?.phone || "",
       email: guest?.email || "",
       invite: inviteLabel(guest),
