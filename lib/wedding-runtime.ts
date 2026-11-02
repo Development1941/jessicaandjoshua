@@ -46,6 +46,8 @@ declare global {
     ) => void;
     playPreview: (url: string) => void;
     clearSelectedSong: () => void;
+    toggleRsvpPlusOne: () => void;
+    removeRsvpPlusOne: () => void;
   }
 }
 
@@ -94,21 +96,38 @@ function setPlusOneVisible(visible: boolean, options?: { preserveValue?: boolean
     "rsvpPlusOneInput"
   ) as HTMLInputElement | null;
 
+  if (!panel) return;
+
   if (visible) {
-    panel?.classList.remove("hidden");
-    panel?.classList.add("is-open");
+    panel.classList.remove("hidden");
+    panel.classList.add("is-open");
+    panel.style.display = "block";
+    panel.style.maxHeight = "280px";
+    panel.style.opacity = "1";
     if (toggle) toggle.setAttribute("aria-expanded", "true");
     if (toggleIcon) toggleIcon.textContent = "−";
     if (toggleLabel) toggleLabel.textContent = "Hide +1";
     window.setTimeout(() => plusOneInput?.focus(), 40);
   } else {
-    panel?.classList.add("hidden");
-    panel?.classList.remove("is-open");
+    panel.classList.add("hidden");
+    panel.classList.remove("is-open");
+    panel.style.display = "none";
+    panel.style.maxHeight = "";
+    panel.style.opacity = "";
     if (toggle) toggle.setAttribute("aria-expanded", "false");
     if (toggleIcon) toggleIcon.textContent = "+";
     if (toggleLabel) toggleLabel.textContent = "Add +1";
     if (plusOneInput && !options?.preserveValue) plusOneInput.value = "";
   }
+}
+
+function toggleRsvpPlusOne() {
+  const panel = document.getElementById("rsvpPlusOnePanel");
+  const isHidden =
+    !panel ||
+    panel.classList.contains("hidden") ||
+    panel.style.display === "none";
+  setPlusOneVisible(isHidden, { preserveValue: true });
 }
 
 function fillGuestNameFields(guest: Guest) {
@@ -1053,6 +1072,8 @@ export function initWeddingSite() {
   window.selectSong = selectSong;
   window.playPreview = playPreview;
   window.clearSelectedSong = clearSelectedSong;
+  window.toggleRsvpPlusOne = toggleRsvpPlusOne;
+  window.removeRsvpPlusOne = () => setPlusOneVisible(false);
 
   countdownTimer = setInterval(updateCountdown, 1000);
   updateCountdown();
@@ -1127,14 +1148,20 @@ export function initWeddingSite() {
 
   const plusOneToggle = document.getElementById("rsvpPlusOneToggle");
   const plusOneRemove = document.getElementById("rsvpPlusOneRemove");
-  const plusOneToggleHandler = () => {
-    const panel = document.getElementById("rsvpPlusOnePanel");
-    const isHidden = panel?.classList.contains("hidden") ?? true;
-    setPlusOneVisible(isHidden, { preserveValue: true });
+  const plusOneToggleHandler = (event?: Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    toggleRsvpPlusOne();
   };
-  const plusOneRemoveHandler = () => setPlusOneVisible(false);
+  const plusOneRemoveHandler = (event?: Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    setPlusOneVisible(false);
+  };
   plusOneToggle?.addEventListener("click", plusOneToggleHandler);
   plusOneRemove?.addEventListener("click", plusOneRemoveHandler);
+  window.toggleRsvpPlusOne = toggleRsvpPlusOne;
+  window.removeRsvpPlusOne = () => setPlusOneVisible(false);
 
   const rsvpForm = document.getElementById("rsvpForm") as HTMLFormElement | null;
   const submitHandler = (e: Event) => {

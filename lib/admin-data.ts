@@ -108,19 +108,23 @@ export async function loadAdminRecords(): Promise<{
     "guest_id, guest_phone, guest_first_name, guest_last_name, guest_names, plus_one_name, brunch_attending, brunch_kids, bar_attending, dietary, jukebox_track, jukebox_artist, spotify_url, created_at, updated_at";
   const rsvpSelectLegacy =
     "guest_id, guest_phone, guest_first_name, guest_last_name, guest_names, brunch_attending, brunch_kids, bar_attending, dietary, jukebox_track, jukebox_artist, spotify_url, created_at, updated_at";
-  let rsvpResult = await admin
+  let rsvpRows: RsvpRow[] | null = null;
+  const primary = await admin
     .from("rsvps")
     .select(rsvpSelectWithPlusOne)
     .order("updated_at", { ascending: false });
-  if (rsvpResult.error && /plus_one_name/i.test(rsvpResult.error.message)) {
-    rsvpResult = await admin
+  if (primary.error && /plus_one_name/i.test(primary.error.message)) {
+    const legacy = await admin
       .from("rsvps")
       .select(rsvpSelectLegacy)
       .order("updated_at", { ascending: false });
+    if (legacy.error) throw new Error(legacy.error.message);
+    rsvpRows = (legacy.data || []) as RsvpRow[];
+  } else if (primary.error) {
+    throw new Error(primary.error.message);
+  } else {
+    rsvpRows = (primary.data || []) as RsvpRow[];
   }
-  const { data: rsvpRows, error: rsvpError } = rsvpResult;
-
-  if (rsvpError) throw new Error(rsvpError.message);
 
   const fullGuestSelect =
     "id, addressee, name, first_name, last_name, phone, email, tier, invite_label, invited_brunch, invited_bar";
@@ -145,7 +149,7 @@ export async function loadAdminRecords(): Promise<{
 
   const respondedIds = new Set<string>();
   const respondedPhones = new Set<string>();
-  const rsvps: AdminRsvp[] = ((rsvpRows || []) as RsvpRow[]).map((row) => {
+  const rsvps: AdminRsvp[] = (rsvpRows || []).map((row) => {
     const guest =
       (row.guest_id ? byId.get(row.guest_id) : undefined) ||
       (row.guest_phone ? byPhone.get(row.guest_phone) : undefined);

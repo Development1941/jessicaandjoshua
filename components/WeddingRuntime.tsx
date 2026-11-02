@@ -10,8 +10,12 @@ export default function WeddingRuntime() {
 
   useEffect(() => {
     setReady(true);
-    return initWeddingSite();
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    return initWeddingSite();
+  }, [ready]);
 
   if (!ready) return null;
 
