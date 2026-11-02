@@ -46,8 +46,8 @@ declare global {
     ) => void;
     playPreview: (url: string) => void;
     clearSelectedSong: () => void;
-    toggleRsvpPlusOne: () => void;
-    removeRsvpPlusOne: () => void;
+    toggleRsvpPlusOne: (event?: Event) => void;
+    removeRsvpPlusOne: (event?: Event) => void;
   }
 }
 
@@ -85,33 +85,43 @@ function splitGuestNames(value: string | null | undefined) {
   return { fullName: raw, plusOneName: "" };
 }
 
+function isPlusOneVisible() {
+  const panel = document.getElementById("rsvpPlusOnePanel");
+  if (!panel) return false;
+  return !panel.hasAttribute("hidden") && !panel.classList.contains("hidden");
+}
+
 function setPlusOneVisible(visible: boolean, options?: { preserveValue?: boolean }) {
-  const details = document.getElementById(
-    "rsvpPlusOneDetails"
-  ) as HTMLDetailsElement | null;
+  const panel = document.getElementById("rsvpPlusOnePanel");
+  const toggle = document.getElementById("rsvpPlusOneToggle");
   const plusOneInput = document.getElementById(
     "rsvpPlusOneInput"
   ) as HTMLInputElement | null;
 
-  if (!details) return;
+  if (!panel) return;
 
-  details.open = visible;
-  if (!visible && plusOneInput && !options?.preserveValue) {
-    plusOneInput.value = "";
-  }
   if (visible) {
+    panel.hidden = false;
+    panel.classList.remove("hidden");
+    if (toggle) toggle.textContent = "Remove +1";
     window.setTimeout(() => plusOneInput?.focus(), 40);
+  } else {
+    panel.hidden = true;
+    panel.classList.add("hidden");
+    if (toggle) toggle.textContent = "Add +1";
+    if (plusOneInput && !options?.preserveValue) plusOneInput.value = "";
   }
 }
 
-function toggleRsvpPlusOne() {
-  const details = document.getElementById(
-    "rsvpPlusOneDetails"
-  ) as HTMLDetailsElement | null;
-  setPlusOneVisible(!details?.open, { preserveValue: true });
+function toggleRsvpPlusOne(event?: Event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  setPlusOneVisible(!isPlusOneVisible(), { preserveValue: true });
 }
 
-function removeRsvpPlusOne() {
+function removeRsvpPlusOne(event?: Event) {
+  event?.preventDefault();
+  event?.stopPropagation();
   setPlusOneVisible(false);
 }
 
@@ -1139,6 +1149,12 @@ export function initWeddingSite() {
   window.toggleRsvpPlusOne = toggleRsvpPlusOne;
   window.removeRsvpPlusOne = removeRsvpPlusOne;
 
+  const plusOneToggle = document.getElementById("rsvpPlusOneToggle");
+  const plusOneToggleHandler = (event: Event) => {
+    toggleRsvpPlusOne(event);
+  };
+  plusOneToggle?.addEventListener("click", plusOneToggleHandler);
+
   const rsvpForm = document.getElementById("rsvpForm") as HTMLFormElement | null;
   const submitHandler = (e: Event) => {
     e.preventDefault();
@@ -1149,10 +1165,7 @@ export function initWeddingSite() {
       (
         document.getElementById("rsvpFullNameInput") as HTMLInputElement | null
       )?.value.trim() || "";
-    const plusOneDetails = document.getElementById(
-      "rsvpPlusOneDetails"
-    ) as HTMLDetailsElement | null;
-    const plusOneName = plusOneDetails?.open
+    const plusOneName = isPlusOneVisible()
       ? (
           document.getElementById("rsvpPlusOneInput") as HTMLInputElement | null
         )?.value.trim() || ""
@@ -1337,6 +1350,7 @@ export function initWeddingSite() {
     songSearchInput?.removeEventListener("input", songInputHandler);
     document.removeEventListener("click", outsideClick);
     rsvpForm?.removeEventListener("submit", submitHandler);
+    plusOneToggle?.removeEventListener("click", plusOneToggleHandler);
     adminDownloadBtn?.removeEventListener("click", adminDownloadHandler);
     adminShowReceived?.removeEventListener("click", showReceivedHandler);
     adminShowPending?.removeEventListener("click", showPendingHandler);

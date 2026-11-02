@@ -40,18 +40,6 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-.rsvp-plus-one > summary {
-  list-style: none;
-}
-
-.rsvp-plus-one > summary::-webkit-details-marker {
-  display: none;
-}
-
-.rsvp-plus-one[open] > summary span[aria-hidden="true"] {
-  transform: rotate(45deg);
-}
-
 body.admin-view .guest-only {
   display: none !important;
 }
